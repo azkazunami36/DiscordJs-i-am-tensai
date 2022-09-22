@@ -1,7 +1,11 @@
 {
+  "type": "module",
   "dependencies": {
     "discord.js": "^14.3.0",
     "dotenv": "^16.0.2",
     "log4js": "^6.6.1"
+  },
+  "scripts": {
+    "main": "node im-tensai-idiot.js"
   }
 }
