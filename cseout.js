@@ -37,7 +37,7 @@ export const output = (set, text1, text2, text3) => {
         case "gettext":
             type = "chat";
             color = yellow;
-            out += green + text2 + "#" + text3 + white + "さんが" + cyan + text1 + white + "を入力しました。"; 
+            out += green + text2 + "#" + text3 + white + "さんが" + cyan + text1.replace(/\r?\n/g, " ") + white + "を入力しました。"; 
             break;
         case "nottoken":
             type = "error";
