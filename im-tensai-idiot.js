@@ -134,7 +134,7 @@ client.on("ready", async () => {
         }],
         status: dynamic.activities.status
     });
-    client.application.commands.set(basedata.commandlist, "926965020724691005");
+    client.application.commands.set(basedata.commandlist, process.env.guildId);
 });
 client.on("messageCreate", async message => {
     if (message.author.bot) return;
