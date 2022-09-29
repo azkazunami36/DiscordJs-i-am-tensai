@@ -37,7 +37,7 @@ export const output = (set, text1, text2, text3) => {
         case "gettext":
             type = "chat";
             color = yellow;
-            out += green + text2 + "#" + text3 + white + "さんが" + cyan + text1.replace(/\r?\n/g, " ") + white + "を入力しました。"; 
+            out += green + text2 + "#" + text3 + white + "さんが" + cyan + text1.replace(/\r?\n/g, " ") + white + "を入力しました。";
             break;
         case "nottoken":
             type = "error";
@@ -49,6 +49,26 @@ export const output = (set, text1, text2, text3) => {
             color = yellow;
             out = text1;
             break;
+        case "listdata":
+            type = "data";
+            color = green;
+            out = "jsonデータは以下です。:";
+            if (text1.length > 1) {
+                for (let i = 0; text1.length != i; i++) {
+                    out += " " + green + text1[i] + white + " ";
+                    if ((i + 1) != text1.length) {
+                        out += ",";
+                    };
+                };
+            } else {
+                out += " " + green + text1 + white + " ";
+            };
+            break;
+            case "getcommand":
+                type = "chat";
+                color = yellow;
+                out += green + text2 + "#" + text3 + white + "さんが" + cyan + text1.replace(/\r?\n/g, " ") + white + "のコマンドを入力しました。";
+                break;
         default:
             type = "unknown";
             color = yellow;
