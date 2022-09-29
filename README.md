@@ -23,7 +23,7 @@
 使う前に、まずトークンの設定やbotの設定を整える必要があります。説明がめんどくさいので端折ってるかもしれませんがお許しを...
 - 全ファイルをダウンロードし終える
 - その後cmd等でそのフォルダまで移動し、`npm ci`を行う。そうすることで全パッケージが自動でダウンロードされます。
-- `.env`ファイルを作成し、その中にtokenとguildidを追加する
+- `.env`ファイルを作成し、その中に`token`と`guildid`を追加する
 ```
 token=xxxxxxxxxxxxxxxxxxxxxxxx.xxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxx
 guildid=xxxxxxxxxxxxxxxxxx
