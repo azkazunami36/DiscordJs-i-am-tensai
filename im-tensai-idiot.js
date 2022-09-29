@@ -74,6 +74,36 @@ const basedata = {
                 .setName("vol")
                 .setDescription("0～100の間で入力をしてくださいっ(^-^)/")
             )
+        ,
+        new SlashCommandBuilder()
+            .setName("help")
+            .setDescription("僕のヘルプが表示されます！")
+        ,
+        new SlashCommandBuilder()
+            .setName("change")
+            .setDescription("botの反応とかいろいろな機能をオンオフできます！")
+            .addBooleanOption(option => option
+                .setName("reaction")
+                .setDescription("メッセージにリアクションするかどうかを切り替えますよ～")
+            )
+            .addBooleanOption(option => option
+                .setName("reply")
+                .setDescription("メッセージに返信するかどうかを切り替えますよ～")
+            )
+            .addStringOption(option => option
+                .setName("statusd")
+                .setDescription("一覧を選択し、ステータスを切り替えます。")
+                .addChoices(
+                    { name: "オンライン", value: "online" },
+                    { name: "離席中", value: "idle" },
+                    { name: "取り込み中", value: "dnd" },
+                    { name: "オフライン", value: "invisible" }
+                )
+            )
+            .addStringOption(option => option
+                .setName("statustext")
+                .setDescription("ステータスに設定する文を入力します。")
+            )
     ]
 };
 var dynamic = {
@@ -81,7 +111,13 @@ var dynamic = {
     stream: "", //ストリーム？/ytplay用
     resource: "",
     vilist: [], //プレイリスト機能に使用する。URLを入れる予定/ytplay用
-    playing: false
+    playing: false,
+    reaction: false,
+    reply: false,
+    activities: {
+        name: "がちってるコード",
+        status: "online"
+    }
 };
 output("etc", "あなたのNode.jsのバージョンは" + process.version + "です。");
 output("etc", "本プログラムのDiscord.js動作推奨バージョンはv14.3.0です。");
@@ -94,9 +130,9 @@ client.on("ready", async () => {
     output("ready", client.user.tag);
     client.user.setPresence({
         activities: [{
-            name: "がちってるコード"
+            name: dynamic.activities.name
         }],
-        status: "online"
+        status: dynamic.activities.status
     });
     client.application.commands.set(basedata.commandlist, "926965020724691005");
 });
@@ -191,6 +227,55 @@ client.on("interactionCreate", async interaction => {
                         )
                 ]
             });
+            break;
+        case "change":
+            var type = {
+                reaction: interaction.options.getBoolean("reaction"),
+                reply: interaction.options.getBoolean("reply"),
+                statusd: interaction.options.getString("statusd"),
+                statustext: interaction.options.getString("statustext")
+            };
+
+            var change;
+            if (type.reaction != null) {
+                dynamic.reaction = type.reaction;
+                change += "\n" + "reaction: " + dynamic.reaction;
+            };
+            if (type.reply != null) {
+                dynamic.reply = type.reply;
+                change += "\n" + "reply: " + dynamic.reply;
+            };
+            if (type.statusd != null) {
+                if (type.statusd != "online" && type.statusd != "idle" && type.statusd != "dnd" && type.statusd != "invisible") return;
+                dynamic.activities.status = type.statusd;
+                change += "\n" + "statusd: " + dynamic.activities.status;
+            };
+            if (type.statustext != null) {
+                dynamic.activities.name = type.statustext;
+                change += "\n" + "statustext: " + dynamic.activities.name;
+            };
+            client.user.setPresence({
+                activities: [{
+                    name: dynamic.activities.name
+                }],
+                status: dynamic.activities.status
+            });
+
+            if (change != null) {
+                interaction.reply({
+                    content: "以下の内容を変更しました。",
+                    embeds: [
+                        new EmbedBuilder()
+                            .setTitle("変更内容")
+                            .setDescription("表示されているものが変更内容です。")
+                            .addFields(
+                                { name: "一覧", value: "```" + change + "```" }
+                            )
+                    ]
+                });
+            } else {
+                interaction.reply("変更内容がありませんでした....\nもう一度やり直しましょう！");
+            };
             break;
     };
 });
