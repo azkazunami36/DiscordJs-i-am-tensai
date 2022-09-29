@@ -18,3 +18,14 @@
     - `statusd`は４つの種類があり、「オンライン」「離席中」「取り込み中」「オフライン」から選ぶことができます。変更するとbotのステータスが変更されます。
     - `statustext`を変更すると、プレイ中の内容を変更することができます。
 以上です。
+
+### 使うための下準備
+使う前に、まずトークンの設定やbotの設定を整える必要があります。説明がめんどくさいので端折ってるかもしれませんがお許しを...
+- 全ファイルをダウンロードし終える
+- その後cmd等でそのフォルダまで移動し、`npm ci`を行う。そうすることで全パッケージが自動でダウンロードされます。
+- `.env`ファイルを作成し、その中にtokenとguildidを追加する
+```
+token=xxxxxxxxxxxxxxxxxxxxxxxx.xxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxx
+guildid=xxxxxxxxxxxxxxxxxx
+```
+終わりです。はやっ！？まぁその後に`npm run start`で実行ですっ！
