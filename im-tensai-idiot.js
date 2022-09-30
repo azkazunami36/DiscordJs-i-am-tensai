@@ -117,15 +117,18 @@ const basedata = {
 };
 let dynamic = {
     connection: "", //接続や切断を管理/ytplay用
-    stream: "", //ストリーム？/ytplay用
-    resource: "",
-    vilist: [], //プレイリスト機能に使用する。URLを入れる予定/ytplay用
-    playing: false,
+    stream: "", //ストリーム/ytplay用
+    resource: "", //プレイヤーの管理をするやつ？音量変更に使用
+    vilist: [], //プレイリスト機能に使用する。URLを入れる/ytplay用
+    playing: false, //再生中かどうかを判断
     playmeta: {
         name: "",
-        url: ""
+        url: "", 
+        title: "", 
+        time: "", 
+        thumbnails: ""
     },
-    volumes: 0.05,
+    volumes: 50, //音量を設定
     reaction: false,
     reply: false,
     activities: {
@@ -206,8 +209,18 @@ client.on("interactionCreate", async interaction => {
                 case "add":
                     const url = interaction.options.getString("url");
                     if (!ytdl.validateURL(url)) return interaction.reply("`" + url + "`が理解できませんでした..."); //ytdlがURL解析してくれるらしい
-                    dynamic.vilist.push({ url: url, username: interaction.user.username });
-                    interaction.reply(await voicestatus(0,1,0,"追加ができました！"));
+                    interaction.deferReply();
+                    let uname = interaction.user.username;
+                    let titled, times, timem = 0, thumbnails;
+                    await ytdl.getInfo(url).then(info => {
+                      titled = info.player_response.videoDetails.title;
+                      times = info.player_response.videoDetails.lengthSeconds;
+                      let th = info.player_response.videoDetails.thumbnail.thumbnails[0].url;
+                      thumbnails = th.split("?")[0];
+                      for (timem; times > 59; timem++) times -= 60;
+                    });
+                    dynamic.vilist.push({ url: url, username: uname, title: titled, time: timem + "分" + times + "秒", thumbnails: thumbnails });
+                    interaction.editReply(await voicestatus(0, 1, 0, 2, "追加ができました！"));
                     break;
                 case "play":
                     if (dynamic.playing) return interaction.reply("既に再生をしています。");
@@ -220,35 +233,41 @@ client.on("interactionCreate", async interaction => {
                         selfDeaf: true //多分スピーカーミュート
                     });
                     ytplay();
-                    interaction.reply(await voicestatus(1,1,1,"曲の再生を始めます！"));
+                    interaction.reply(await voicestatus(1, 1, 1, 1, "曲の再生を始めます！"));
                     break;
                 case "stop":
                     if (!dynamic.playing) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
-                    dynamic.stream.destroy(); //ストリームの切断？わからん
+                    dynamic.stream.destroy(); //ストリームの切断
                     dynamic.connection.destroy(); //VCの切断
                     dynamic.playmeta.name = "";
                     dynamic.playmeta.url = "";
-                    interaction.reply(await voicestatus(0,1,0,"曲を止めました...(´・ω・｀)"));
+                    dynamic.playmeta.title = "";
+                    interaction.reply(await voicestatus(0, 1, 0, 0, "曲を止めました...(´・ω・｀)"));
                     dynamic.playing = false;
                     break;
                 case "skip":
                     if (!dynamic.playing) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
-                    dynamic.stream.destroy(); //ストリームの切断？わからん
+                    dynamic.stream.destroy(); //ストリームの切断
                     if (dynamic.vilist[0]) {
                         ytplay();
-                        interaction.reply((await voicestatus(1,1,1,"次の曲を再生しますねぇ")));
+                        interaction.reply((await voicestatus(1, 1, 1, 1, "次の曲を再生しますねぇ")));
                     } else {
                         interaction.reply("うまく動作ができていません。エラーの可能性がありますので、この状態になるまでの動きを\n`あんこかずなみ36#5008`にお伝えください。ログには記録済みです。");
                     };
                     break;
                 case "volume":
-                    const volumes = (interaction.options.getNumber("vol") / 100);
-                    if (dynamic.playing) dynamic.resource.volume.volume = volumes;
+                    let volumes = (interaction.options.getNumber("vol"));
+                    if (volumes < 0) {
+                        volumes = 0;
+                    } else if (volumes > 100) {
+                        volumes = 100;
+                    };
+                    if (dynamic.playing) dynamic.resource.volume.volume = volumes / 100;
                     dynamic.volumes = volumes;
-                    interaction.reply(await voicestatus(0,0,1,"音量を変更しました！"));
+                    interaction.reply(await voicestatus(0, 0, 1, 0, "音量を変更しました！"));
                     break;
                 case "status":
-                    interaction.reply((await voicestatus(1,1,1,"現在のすべての状態を表示しまーすっ")));
+                    interaction.reply((await voicestatus(1, 1, 1, 1, "現在のすべての状態を表示しまーすっ")));
             };
             break;
         case "change":
@@ -328,57 +347,63 @@ const ytplay = async () => {
     if (dynamic.vilist[0]) {
         dynamic.playmeta.url = dynamic.vilist[0].url;
         dynamic.playmeta.name = dynamic.vilist[0].username;
+        dynamic.playmeta.title = dynamic.vilist[0].title;
+        dynamic.playmeta.time = dynamic.vilist[0].time;
+        dynamic.playmeta.thumbnails = dynamic.vilist[0].thumbnails;
         dynamic.vilist.shift();
     };
     let player = createAudioPlayer(); //多分音声を再生するためのもの
     dynamic.connection.subscribe(player); //connectionにplayerを登録？
     dynamic.stream = ytdl(ytdl.getURLVideoID(dynamic.playmeta.url), { //ストリームを使うらしいけど、意味わからない
-        filter: format => format.audioCodec === 'opus' && format.container === 'webm', //webm？ opus？ しらね(いやwebmとかopusとかは知ってる)
-        quality: "highest", //わからん
-        highWaterMark: 32 * 1024 * 1024, //わからん
+        filter: format => format.audioCodec === 'opus' && format.container === 'webm', //多分これで音声だけ抽出してる
+        quality: "highest", //品質
+        highWaterMark: 32 * 1024 * 1024, //メモリキャッシュする量
     });
     dynamic.resource = createAudioResource(dynamic.stream, { inputType: StreamType.WebmOpus, inlineVolume: true }); //多分streamのデータを形式とともに入れる？
-    dynamic.resource.volume.setVolume(dynamic.volumes);
+    dynamic.resource.volume.setVolume(dynamic.volumes / 100); //音量調節
 
     player.play(dynamic.resource); //再生
     dynamic.playing = true;
-    console.log(AudioPlayerStatus.Playing);
     await entersState(player, AudioPlayerStatus.Playing, 10 * 1000);
-    console.log(AudioPlayerStatus.Playing + AudioPlayerStatus.Idle)
     await entersState(player, AudioPlayerStatus.Idle, 24 * 60 * 60 * 1000);
-    console.log(AudioPlayerStatus.Idle);
     ytplay();
 };
-const voicestatus = async (p, l, v, content) => {
-    let list = "";
-    let play = "```URL: " + dynamic.playmeta.url + "\n追加者: " + dynamic.playmeta.name + "```";
+const voicestatus = async (p, l, v, t, content) => {
+    let vilist = "";
+    let viplay = "```タイトル: " + dynamic.playmeta.title + "\n動画時間: " + dynamic.playmeta.time + "\nURL: " + dynamic.playmeta.url + "\n追加者: " + dynamic.playmeta.name + "```";
     for (let i = 0; i != dynamic.vilist.length; i++) {
-        list += (i + 1) + "本目";
-        if (i == 0) list += "(次再生されます。)";
-        list += "\n```追加者: " + dynamic.vilist[i].username + "\nURL: " + dynamic.vilist[i].url + "```";
+        vilist += (i + 1) + "本目";
+        if (i == 0) vilist += "(次再生されます。)";
+        vilist += "\n```タイトル: " + dynamic.vilist[i].title + "\n動画時間: " + dynamic.vilist[i].time + "\nURL: " + dynamic.vilist[i].url + "\n追加者: " + dynamic.vilist[i].username + "```";
     };
-    if (!dynamic.vilist[0]) list = "リストの内容はありません。";
-    if (!dynamic.playing) play = "現在再生されていません。";
+    if (!dynamic.vilist[0]) vilist = "リストの内容はありません。";
+    if (!dynamic.playing) viplay = "現在再生されていません。";
     let embed = new EmbedBuilder().setTitle("状態");
     let description = "主に";
     if (p == 1) {
-        embed.addFields({ name: "再生中の曲の詳細", value: play });
+        embed.addFields({ name: "再生中の曲の詳細", value: viplay });
         if (description != "主に") description += "、";
         description += "再生中の曲";
     };
     if (l == 1) {
-        embed.addFields({ name: "再生リスト", value: list });
+        embed.addFields({ name: "再生リスト", value: vilist });
         if (description != "主に") description += "、";
         description += "再生リスト";
     };
     if (v == 1) {
-        embed.addFields({ name: "音量", value: String(dynamic.volumes * 100) + "%" });
+        embed.addFields({ name: "音量", value: String(dynamic.volumes) + "%" });
         if (description != "主に") description += "、";
         description += "音量";
     };
+    if (t == 1 && dynamic.playing) {
+        embed.setThumbnail(dynamic.playmeta.thumbnails);
+    };
+    if (t == 1 && !dynamic.playing || t == 2) {
+        embed.setThumbnail(dynamic.vilist[0].thumbnails);
+    };
     description += "を表示します。";
-    embed.setDescription(description);
     if (p == 1 && l == 1 && v == 1) description = "全ての状態を表示します。";
+    embed.setDescription(description);
     return { content: content, embeds: [embed] };
 };
 
