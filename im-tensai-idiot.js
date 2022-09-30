@@ -1,7 +1,266 @@
-//練習でここから自作モジュール
-import { output, emojichange } from "./cseout.js";
+/**
+ * `outstate`は、入力の手間を省くために使用します。
+ */
+const outState = {
+    /**
+     * botを起動する際に使用します。
+     */
+    Startup: "startup",
+    /**
+     * botをdiscordに接続する際に使用します。
+     */
+    Connecting: "connecting",
+    /**
+     * botがDiscordに接続された際に使用します。
+     */
+    Ready: "ready",
+    /**
+     * `messageCreate`にてメッセージを受け取った際に使用します。
+     */
+    GetText: "gettext",
+    /**
+     * `interactionCreate`にてコマンドを受け取った際に使用します。
+     */
+    GetCommand: "getcommand",
+    /**
+     * Discorsに使用するトークンの存在が確認できなかった場合に使用します。
+     */
+    NotToken: "nottoken",
+    /**
+     * この中にない機能を使用する場合に使用します。
+     */
+    NaN: "etc"
+}
+/**
+* - コンソール出力用関数です。
+* @param set - `outState`を使用し、機能を選択します。
+* @param text1 - 入力用1
+* @param text2 - 入力用2
+* @param text3 - 入力用3
+*/
+const output = (set, text1, text2, text3) => {
+    let black = "\u001b[30m";
+    let red = "\u001b[31m";
+    let green = "\u001b[32m";
+    let yellow = "\u001b[33m";
+    let blue = "\u001b[34m";
+    let magenta = "\u001b[35m";
+    let cyan = "\u001b[36m";
+    let white = "\u001b[37m";
+    //時間取得でふ。ログの記録に使いまふ
+    let nowTime =
+        magenta +
+        ('0000' + new Date().getFullYear()).slice(-4) + '年' +
+        ('00' + (new Date().getMonth() + 1)).slice(-2) + '月' +
+        ('00' + new Date().getDate()).slice(-2) + '日' +
+        ('00' + new Date().getHours()).slice(-2) + '時' +
+        ('00' + new Date().getMinutes()).slice(-2) + '分' +
+        ('00' + new Date().getSeconds()).slice(-2) + '秒' +
+        white;
+    var color, type, out = "", space = "";
+    switch (set) {
+        case "startup":
+            type = "system";
+            color = yellow;
+            out = "モジュールを取得中...";
+            break;
+        case "connecting":
+            type = "system";
+            color = yellow;
+            out = "接続しています...";
+            break;
+        case "ready":
+            type = "system";
+            color = yellow;
+            out = text1 + "の準備が完了しました。";
+            break;
+        case "gettext":
+            type = "chat";
+            color = yellow;
+            out += green + text2 + "#" + text3 + white + "さんが" + cyan + text1.replace(/\r?\n/g, " ") + white + "を入力しました。";
+            break;
+        case "nottoken":
+            type = "error";
+            color = red;
+            out = "トークンが空でした。「.env」を作成し、トークンを設定してください。";
+            break;
+        case "etc":
+            type = "c-log";
+            color = yellow;
+            out = text1;
+            break;
+        case "listdata":
+            type = "data";
+            color = green;
+            out = "jsonデータは以下です。:";
+            if (text1.length > 1) {
+                for (let i = 0; text1.length != i; i++) {
+                    out += " " + green + text1[i] + white + " ";
+                    if ((i + 1) != text1.length) {
+                        out += ",";
+                    };
+                };
+            } else {
+                out += " " + green + text1 + white + " ";
+            };
+            break;
+        case "getcommand":
+            type = "chat";
+            color = yellow;
+            out += green + text2 + "#" + text3 + white + "さんが" + cyan + text1.replace(/\r?\n/g, " ") + white + "のコマンドを入力しました。";
+            break;
+        default:
+            type = "unknown";
+            color = yellow;
+            out = text1 + set;
+            break;
+    };
+    for (let i = 0; i < (9 - type.length); i++) {
+        space += " ";
+    };
+    console.log(nowTime + ":" + color + type + space + white + ": " + out);
+};
+/**
+ * 
+ * @param text - 絵文字変化
+ * @returns - 出力
+ */
+const emojichange = text => {
+    var q = text.replace(/\r?\n/g, " ");
+    var emoji = [
+        {
+            "ID": "emoji_1",
+            "name": "草"
+        },
+        {
+            "ID": "emoji_2",
+            "name": "最高"
+        },
+        {
+            "ID": "emoji_3",
+            "name": "悲しみ"
+        },
+        {
+            "ID": "emoji_4",
+            "name": "おつです。"
+        },
+        {
+            "ID": "emoji_5",
+            "name": "了解です。"
+        },
+        {
+            "ID": "emoji_6",
+            "name": "なるほど"
+        },
+        {
+            "ID": "emoji_7",
+            "name": "それな"
+        },
+        {
+            "ID": "emoji_8",
+            "name": "神"
+        },
+        {
+            "ID": "emoji_9",
+            "name": "むりせず"
+        },
+        {
+            "ID": "emoji_10",
+            "name": "お大事に"
+        },
+        {
+            "ID": "emoji_11",
+            "name": "ひえっ"
+        },
+        {
+            "ID": "emoji_12",
+            "name": "どんまい"
+        },
+        {
+            "ID": "emoji_13",
+            "name": "地獄"
+        },
+        {
+            "ID": "emoji_14",
+            "name": "やったね"
+        },
+        {
+            "ID": "emoji_15",
+            "name": "それはそう"
+        },
+        {
+            "ID": "emoji_16",
+            "name": "わかる"
+        },
+        {
+            "ID": "emoji_17",
+            "name": "寝て"
+        },
+        {
+            "ID": "emoji_18",
+            "name": "すごい！"
+        },
+        {
+            "ID": "emoji_19",
+            "name": "やさしい"
+        },
+        {
+            "ID": "emoji_20",
+            "name": "強い"
+        },
+        {
+            "ID": "emoji_21",
+            "name": "え？"
+        },
+        {
+            "ID": "emoji_22",
+            "name": "無理せず"
+        },
+        {
+            "ID": "emoji_23",
+            "name": "ええんやで"
+        },
+        {
+            "ID": "emoji_24",
+            "name": "百里ある"
+        },
+        {
+            "ID": "emoji_25",
+            "name": "いいね！"
+        },
+        {
+            "ID": "emoji_26",
+            "name": "ようこそ"
+        },
+        {
+            "ID": "emoji_27",
+            "name": ""
+        },
+        {
+            "ID": "emoji_28",
+            "name": "にっこり"
+        },
+        {
+            "ID": "emoji_29",
+            "name": ""
+        },
+        {
+            "ID": "emoji_30",
+            "name": "わぁい"
+        },
+        {
+            "ID": "emoji_31",
+            "name": "池"
+        }
+    ];
+    for (let i = emoji.length - 1; i > (0 - 1); i--) {
+        var regexp = new RegExp(emoji[i].ID, 'g');
+        q = q.replace(regexp, "絵文字、" + emoji[i].name);
+    };
+    return q;
+};
 //ここまで
-output("startup");
+output(outState.Startup);
 import net from "net"; const bclient = new net.Socket();
 import dotenv from "dotenv"; dotenv.config();
 import fs from "fs";
@@ -123,9 +382,9 @@ let dynamic = {
     playing: false, //再生中かどうかを判断
     playmeta: {
         name: "",
-        url: "", 
-        title: "", 
-        time: "", 
+        url: "",
+        title: "",
+        time: "",
         thumbnails: ""
     },
     volumes: 50, //音量を設定
@@ -136,17 +395,18 @@ let dynamic = {
             name: "がちってるコード"
         }],
         status: "online"
-    }
+    },
+    timeout: ""
 };
-output("etc", "あなたのNode.jsのバージョンは" + process.version + "です。");
-output("etc", "本プログラムのDiscord.js動作推奨バージョンはv14.3.0です。");
+output(outState.NaN, "あなたのNode.jsのバージョンは" + process.version + "です。");
+output(outState.NaN, "本プログラムのDiscord.js動作推奨バージョンはv14.3.0です。");
 const token = process.env.token;
 if (!token) {
-    output("nottoken");
+    output(outState.NotToken);
     process.exit(0);
 };
 client.on("ready", async () => {
-    output("ready", client.user.tag);
+    output(outState.Ready, client.user.tag);
     client.user.setPresence(dynamic.activities);
     client.application.commands.set(basedata.commandlist, process.env.guildId);
 });
@@ -158,7 +418,7 @@ client.on("messageCreate", async message => {
         let intt = intc[i].match(/[0-9]{17,}/g)[0];
         outc = outc.replace(new RegExp("<@" + intt + ">"), "\u001b[33m" + client.users.cache.get(intt).username + "\u001b[36m");
     };
-    output("gettext", outc, message.author.username, message.author.discriminator);
+    output(outState.GetText, outc, message.author.username, message.author.discriminator);
     const my_mentions = message.mentions.users.has(client.user.id) || message.mentions.roles.some(r => [client.user.username].includes(r.name)) ? true : false;
     if (dynamic.reply) {
         if (my_mentions || message.content == "天才ばか" || message.content == "天才バカ") {
@@ -198,7 +458,7 @@ client.on("messageDelete", async message => {
 });
 client.on("interactionCreate", async interaction => {
     if (!interaction.isChatInputCommand()) return;
-    output("getcommand", interaction.commandName, interaction.member.user.username, interaction.member.user.discriminator);
+    output(outState.GetCommand, interaction.commandName, interaction.member.user.username, interaction.member.user.discriminator);
 
     switch (interaction.commandName) {
         case "voice":
@@ -209,15 +469,14 @@ client.on("interactionCreate", async interaction => {
                     const videoid = ytdl.getURLVideoID(url);
                     interaction.deferReply();
                     let uname = interaction.user.username;
-                    let titled, times, timem = 0, thumbnails;
+                    let titled, time, thumbnails;
                     await ytdl.getInfo(url).then(info => {
-                      titled = info.player_response.videoDetails.title;
-                      times = info.player_response.videoDetails.lengthSeconds;
-                      let th = info.player_response.videoDetails.thumbnail.thumbnails[0].url;
-                      thumbnails = th.split("?")[0];
-                      for (timem; times > 59; timem++) times -= 60;
+                        titled = info.player_response.videoDetails.title;
+                        time = info.player_response.videoDetails.lengthSeconds;
+                        let th = info.player_response.videoDetails.thumbnail.thumbnails[0].url;
+                        thumbnails = th.split("?")[0];
                     });
-                    dynamic.vilist.push({ url: videoid, username: uname, title: titled, time: timem + "分" + times + "秒", thumbnails: thumbnails });
+                    dynamic.vilist.push({ url: videoid, username: uname, title: titled, time: time, thumbnails: thumbnails });
                     interaction.editReply(await voicestatus(0, 1, 0, 2, "追加ができました！"));
                     break;
                 case "play":
@@ -237,21 +496,16 @@ client.on("interactionCreate", async interaction => {
                     if (!dynamic.playing) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
                     dynamic.stream.destroy(); //ストリームの切断
                     dynamic.connection.destroy(); //VCの切断
-                    dynamic.playmeta.name = "";
-                    dynamic.playmeta.url = "";
-                    dynamic.playmeta.title = "";
+                    clearTimeout(dynamic.timeout);
                     interaction.reply(await voicestatus(0, 1, 0, 0, "曲を止めました...(´・ω・｀)"));
                     dynamic.playing = false;
                     break;
                 case "skip":
                     if (!dynamic.playing) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
                     dynamic.stream.destroy(); //ストリームの切断
-                    if (dynamic.vilist[0]) {
-                        ytplay();
-                        interaction.reply((await voicestatus(1, 1, 1, 1, "次の曲を再生しますねぇ")));
-                    } else {
-                        interaction.reply("うまく動作ができていません。エラーの可能性がありますので、この状態になるまでの動きを\n`あんこかずなみ36#5008`にお伝えください。ログには記録済みです。");
-                    };
+                    clearTimeout(dynamic.timeout);
+                    ytplay();
+                    interaction.reply((await voicestatus(1, 1, 1, 1, "次の曲を再生しますねぇ")));
                     break;
                 case "volume":
                     let volumes = (interaction.options.getNumber("vol"));
@@ -345,6 +599,7 @@ const ytplay = async () => {
         dynamic.playmeta.thumbnails = dynamic.vilist[0].thumbnails;
         dynamic.vilist.shift();
     };
+    dynamic.playing = true;
     let player = createAudioPlayer(); //多分音声を再生するためのもの
     dynamic.connection.subscribe(player); //connectionにplayerを登録？
     dynamic.stream = ytdl(dynamic.playmeta.url, { //ytdlで音声をダウンロードする
@@ -356,18 +611,21 @@ const ytplay = async () => {
     dynamic.resource.volume.setVolume(dynamic.volumes / 100); //音量調節
 
     player.play(dynamic.resource); //再生
-    dynamic.playing = true;
-    await entersState(player, AudioPlayerStatus.Playing, 10 * 1000);
-    await entersState(player, AudioPlayerStatus.Idle, 24 * 60 * 60 * 1000);
+    await entersState(player, AudioPlayerStatus.Playing); //再生が始まるまでawaitで待機
+    await entersState(player, AudioPlayerStatus.Idle); //再生リソースがなくなる(再生が終わる)まで待機
     ytplay();
 };
 const voicestatus = async (p, l, v, t, content) => {
     let vilist = "";
-    let viplay = "```タイトル: " + dynamic.playmeta.title + "\n動画時間: " + dynamic.playmeta.time + "\nURL: https://youtu.be/" + dynamic.playmeta.url + "\n追加者: " + dynamic.playmeta.name + "```";
+    let viplay = "```タイトル: " + dynamic.playmeta.title + "\n動画時間: " + (await timeString(dynamic.playmeta.time)) + "\nURL: https://youtu.be/" + dynamic.playmeta.url + "\n追加者: " + dynamic.playmeta.name + "```";
     for (let i = 0; i != dynamic.vilist.length; i++) {
         vilist += (i + 1) + "本目";
         if (i == 0) vilist += "(次再生されます。)";
-        vilist += "\n```タイトル: " + dynamic.vilist[i].title + "\n動画時間: " + dynamic.vilist[i].time + "\nURL: https://youtu.be/" + dynamic.vilist[i].url + "\n追加者: " + dynamic.vilist[i].username + "```";
+        let seconds, minutes = 0, hour = 0;
+        seconds = dynamic.vilist[i].time;
+        for (minutes; seconds > 59; minutes++) seconds -= 60;
+        for (hour; minutes > 59; hour++) minutes -= 60;
+        vilist += "\n```タイトル: " + dynamic.vilist[i].title + "\n動画時間: " + (await timeString(dynamic.vilist[i].time)) + "\nURL: https://youtu.be/" + dynamic.vilist[i].url + "\n追加者: " + dynamic.vilist[i].username + "```";
     };
     if (!dynamic.vilist[0]) vilist = "リストの内容はありません。";
     if (!dynamic.playing) viplay = "現在再生されていません。";
@@ -390,15 +648,23 @@ const voicestatus = async (p, l, v, t, content) => {
     };
     if (t == 1 && dynamic.playing) {
         embed.setThumbnail(dynamic.playmeta.thumbnails);
-    };
-    if (t == 1 && !dynamic.playing || t == 2) {
-        embed.setThumbnail(dynamic.vilist[dynamic.vilist.length - 1].thumbnails);
+    } else if (t == 1 && !dynamic.playing || t == 2) {
+        if (dynamic.vilist[0]) embed.setThumbnail(dynamic.vilist[dynamic.vilist.length - 1].thumbnails);
     };
     description += "を表示します。";
     if (p == 1 && l == 1 && v == 1) description = "全ての状態を表示します。";
     embed.setDescription(description);
     return { content: content, embeds: [embed] };
 };
+const timeString = async seconds => {
+    let minutes = 0, hour = 0, timeset = "";
+    for (minutes; seconds > 59; minutes++) seconds -= 60;
+    for (hour; minutes > 59; hour++) minutes -= 60;
+    if (hour != 0) timeset += hour + "時間";
+    if (minutes != 0) timeset += minutes + "分";
+    if (seconds != 0) timeset += seconds + "秒";
+    return timeset;
+};
 
-output("connecting");
+output(outState.Connecting);
 client.login(token);
