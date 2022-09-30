@@ -107,7 +107,7 @@ const basedata = {
             )
     ]
 };
-var dynamic = {
+let dynamic = {
     connection: "", //接続や切断を管理/ytplay用
     stream: "", //ストリーム？/ytplay用
     resource: "",
@@ -139,7 +139,7 @@ client.on("ready", async () => {
 });
 client.on("messageCreate", async message => {
     if (message.author.bot) return;
-    var outputcontent = message.content;
+    let outputcontent = message.content;
     if (message.content.match(/<@[0-9]{17,}>/g) != null) {
         for (let i = 0; i != message.content.match(/<@[0-9]{17,}>/g).length; i++) {
             let yellow = "\u001b[33m";
@@ -197,7 +197,7 @@ client.on("interactionCreate", async interaction => {
                     const url = interaction.options.getString("url");
                     if (!ytdl.validateURL(url)) return interaction.reply("`" + url + "`が理解できませんでした..."); //ytdlがURL解析してくれるらしい
                     dynamic.vilist.push({ url: url, username: interaction.user.username });
-                    var embedtext = new EmbedBuilder()
+                    const embedtext = new EmbedBuilder()
                         .setTitle("現在の再生リスト")
                         .setDescription("このリスト内のものを上から順に再生します。");
                     for (let i = 0; i != dynamic.vilist.length; i++) {
@@ -272,14 +272,14 @@ client.on("interactionCreate", async interaction => {
             };
             break;
         case "change":
-            var type = {
+            let type = {
                 reaction: interaction.options.getBoolean("reaction"),
                 reply: interaction.options.getBoolean("reply"),
                 statusd: interaction.options.getString("statusd"),
                 statustext: interaction.options.getString("statustext")
             };
 
-            var change;
+            let change;
             if (type.reaction != null) {
                 dynamic.reaction = type.reaction;
                 change += "\n" + "reaction: " + dynamic.reaction;
@@ -345,7 +345,7 @@ client.on("messageReactionAdd", (MessageReaction, User) => {
 client.on("messageReactionRemove", (MessageReaction, User) => {
 });
 const ytplay = async () => {
-    var url;
+    let url;
     if (dynamic.vilist[1]) {
         url = dynamic.vilist[0].url;
         dynamic.vilist.shift();
@@ -353,7 +353,7 @@ const ytplay = async () => {
         url = dynamic.vilist[0].url;
     };
     output("listdata", dynamic.vilist);
-    var player = createAudioPlayer(); //多分音声を再生するためのもの
+    let player = createAudioPlayer(); //多分音声を再生するためのもの
     dynamic.connection.subscribe(player); //connectionにplayerを登録？
     dynamic.stream = ytdl(ytdl.getURLVideoID(url), { //ストリームを使うらしいけど、意味わからない
         filter: format => format.audioCodec === 'opus' && format.container === 'webm', //webm？ opus？ しらね(いやwebmとかopusとかは知ってる)
