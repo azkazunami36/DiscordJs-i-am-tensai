@@ -132,7 +132,9 @@ let dynamic = {
     reaction: false,
     reply: false,
     activities: {
-        name: "がちってるコード",
+        activities: [{
+            name: "がちってるコード"
+        }],
         status: "online"
     }
 };
@@ -145,12 +147,7 @@ if (!token) {
 };
 client.on("ready", async () => {
     output("ready", client.user.tag);
-    client.user.setPresence({
-        activities: [{
-            name: dynamic.activities.name
-        }],
-        status: dynamic.activities.status
-    });
+    client.user.setPresence(dynamic.activities);
     client.application.commands.set(basedata.commandlist, process.env.guildId);
 });
 client.on("messageCreate", async message => {
@@ -209,6 +206,7 @@ client.on("interactionCreate", async interaction => {
                 case "add":
                     const url = interaction.options.getString("url");
                     if (!ytdl.validateURL(url)) return interaction.reply("`" + url + "`が理解できませんでした..."); //ytdlがURL解析してくれるらしい
+                    const videoid = ytdl.getURLVideoID(url);
                     interaction.deferReply();
                     let uname = interaction.user.username;
                     let titled, times, timem = 0, thumbnails;
@@ -219,7 +217,7 @@ client.on("interactionCreate", async interaction => {
                       thumbnails = th.split("?")[0];
                       for (timem; times > 59; timem++) times -= 60;
                     });
-                    dynamic.vilist.push({ url: url, username: uname, title: titled, time: timem + "分" + times + "秒", thumbnails: thumbnails });
+                    dynamic.vilist.push({ url: videoid, username: uname, title: titled, time: timem + "分" + times + "秒", thumbnails: thumbnails });
                     interaction.editReply(await voicestatus(0, 1, 0, 2, "追加ができました！"));
                     break;
                 case "play":
@@ -293,15 +291,10 @@ client.on("interactionCreate", async interaction => {
                 change += "\n" + "statusd: " + dynamic.activities.status;
             };
             if (type.statustext != null) {
-                dynamic.activities.name = type.statustext;
-                change += "\n" + "statustext: " + dynamic.activities.name;
+                dynamic.activities.activities[0].name = type.statustext;
+                change += "\n" + "statustext: " + dynamic.activities.activities[0].name;
             };
-            client.user.setPresence({
-                activities: [{
-                    name: dynamic.activities.name
-                }],
-                status: dynamic.activities.status
-            });
+            client.user.setPresence(dynamic.activities);
 
             if (change != null) {
                 interaction.reply({
@@ -354,7 +347,7 @@ const ytplay = async () => {
     };
     let player = createAudioPlayer(); //多分音声を再生するためのもの
     dynamic.connection.subscribe(player); //connectionにplayerを登録？
-    dynamic.stream = ytdl(ytdl.getURLVideoID(dynamic.playmeta.url), { //ストリームを使うらしいけど、意味わからない
+    dynamic.stream = ytdl(dynamic.playmeta.url, { //ytdlで音声をダウンロードする
         filter: format => format.audioCodec === 'opus' && format.container === 'webm', //多分これで音声だけ抽出してる
         quality: "highest", //品質
         highWaterMark: 32 * 1024 * 1024, //メモリキャッシュする量
@@ -370,11 +363,11 @@ const ytplay = async () => {
 };
 const voicestatus = async (p, l, v, t, content) => {
     let vilist = "";
-    let viplay = "```タイトル: " + dynamic.playmeta.title + "\n動画時間: " + dynamic.playmeta.time + "\nURL: " + dynamic.playmeta.url + "\n追加者: " + dynamic.playmeta.name + "```";
+    let viplay = "```タイトル: " + dynamic.playmeta.title + "\n動画時間: " + dynamic.playmeta.time + "\nURL: https://youtu.be/" + dynamic.playmeta.url + "\n追加者: " + dynamic.playmeta.name + "```";
     for (let i = 0; i != dynamic.vilist.length; i++) {
         vilist += (i + 1) + "本目";
         if (i == 0) vilist += "(次再生されます。)";
-        vilist += "\n```タイトル: " + dynamic.vilist[i].title + "\n動画時間: " + dynamic.vilist[i].time + "\nURL: " + dynamic.vilist[i].url + "\n追加者: " + dynamic.vilist[i].username + "```";
+        vilist += "\n```タイトル: " + dynamic.vilist[i].title + "\n動画時間: " + dynamic.vilist[i].time + "\nURL: https://youtu.be/" + dynamic.vilist[i].url + "\n追加者: " + dynamic.vilist[i].username + "```";
     };
     if (!dynamic.vilist[0]) vilist = "リストの内容はありません。";
     if (!dynamic.playing) viplay = "現在再生されていません。";
@@ -399,7 +392,7 @@ const voicestatus = async (p, l, v, t, content) => {
         embed.setThumbnail(dynamic.playmeta.thumbnails);
     };
     if (t == 1 && !dynamic.playing || t == 2) {
-        embed.setThumbnail(dynamic.vilist[0].thumbnails);
+        embed.setThumbnail(dynamic.vilist[dynamic.vilist.length - 1].thumbnails);
     };
     description += "を表示します。";
     if (p == 1 && l == 1 && v == 1) description = "全ての状態を表示します。";
