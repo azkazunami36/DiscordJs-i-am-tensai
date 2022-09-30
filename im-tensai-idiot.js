@@ -205,12 +205,10 @@ client.on("interactionCreate", async interaction => {
                         content: "追加ができました！",
                         embeds: [embedtext1]
                     });
-                    output("listdata", dynamic.vilist);
                     break;
-                case "play":
+               case "play":
                     if (dynamic.playing) return interaction.reply("既に再生をしています。");
                     if (!interaction.member.voice.channel) return message.reply(message.author.username + "さんがボイスチャットにいません...\n入ってからまたやってみてくださいね！");
-                    output("listdata", dynamic.vilist);
                     if (!dynamic.vilist[0]) return interaction.reply("プレイリストが空です...`add [URL]`でプレイリストに追加してください！");
                     dynamic.connection = joinVoiceChannel({ //うまく説明はできないけど、ボイスチャンネル参加
                         adapterCreator: interaction.guild.voiceAdapterCreator, //わからん
@@ -242,7 +240,6 @@ client.on("interactionCreate", async interaction => {
                     for (let i = 0; i != dynamic.vilist.length; i++) {
                         embedtext2.addFields({ name: (i + 1) + "本目", value: "```" + "追加者: " + dynamic.vilist[i].username + "\nURL: " + dynamic.vilist[i].url + "```" });
                     };
-                    output("listdata", dynamic.vilist);
                     interaction.reply({
                         content: "再生を停止します。",
                         embeds: [embedtext2]
@@ -252,7 +249,6 @@ client.on("interactionCreate", async interaction => {
                 case "skip":
                     if (!dynamic.playing) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
                     dynamic.stream.destroy(); //ストリームの切断？わからん
-                    output("listdata", dynamic.vilist);
                     if (dynamic.vilist[0]) {
                         ytplay();
                     } else {
@@ -359,7 +355,6 @@ const ytplay = async () => {
     } else {
         url = dynamic.vilist[0].url;
     };
-    output("listdata", dynamic.vilist);
     let player = createAudioPlayer(); //多分音声を再生するためのもの
     dynamic.connection.subscribe(player); //connectionにplayerを登録？
     dynamic.stream = ytdl(ytdl.getURLVideoID(url), { //ストリームを使うらしいけど、意味わからない
