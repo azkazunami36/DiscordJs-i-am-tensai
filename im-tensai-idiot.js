@@ -113,6 +113,7 @@ let dynamic = {
     resource: "",
     vilist: [], //プレイリスト機能に使用する。URLを入れる予定/ytplay用
     playing: false,
+    volumes: 0.05,
     reaction: false,
     reply: false,
     activities: {
@@ -194,15 +195,15 @@ client.on("interactionCreate", async interaction => {
                     const url = interaction.options.getString("url");
                     if (!ytdl.validateURL(url)) return interaction.reply("`" + url + "`が理解できませんでした..."); //ytdlがURL解析してくれるらしい
                     dynamic.vilist.push({ url: url, username: interaction.user.username });
-                    const embedtext = new EmbedBuilder()
+                    const embedtext1 = new EmbedBuilder()
                         .setTitle("現在の再生リスト")
                         .setDescription("このリスト内のものを上から順に再生します。");
                     for (let i = 0; i != dynamic.vilist.length; i++) {
-                        embedtext.addFields({ name: (i + 1) + "本目", value: "```" + "追加者: " + dynamic.vilist[i].username + "\nURL: " + dynamic.vilist[i].url + "```" });
+                        embedtext1.addFields({ name: (i + 1) + "本目", value: "```" + "追加者: " + dynamic.vilist[i].username + "\nURL: " + dynamic.vilist[i].url + "```" });
                     };
                     interaction.reply({
                         content: "追加ができました！",
-                        embeds: [embedtext]
+                        embeds: [embedtext1]
                     });
                     output("listdata", dynamic.vilist);
                     break;
@@ -235,7 +236,17 @@ client.on("interactionCreate", async interaction => {
                     if (!dynamic.playing) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
                     dynamic.stream.destroy(); //ストリームの切断？わからん
                     dynamic.connection.destroy(); //VCの切断
-                    interaction.reply("再生を停止します。");
+                    const embedtext2 = new EmbedBuilder()
+                        .setTitle("現在の再生リスト")
+                        .setDescription("このリスト内のものを上から順に再生します。");
+                    for (let i = 0; i != dynamic.vilist.length; i++) {
+                        embedtext2.addFields({ name: (i + 1) + "本目", value: "```" + "追加者: " + dynamic.vilist[i].username + "\nURL: " + dynamic.vilist[i].url + "```" });
+                    };
+                    output("listdata", dynamic.vilist);
+                    interaction.reply({
+                        content: "再生を停止します。",
+                        embeds: [embedtext2]
+                    });
                     dynamic.playing = false;
                     break;
                 case "skip":
@@ -250,10 +261,9 @@ client.on("interactionCreate", async interaction => {
                     break;
                 case "volume":
                     if (!dynamic.playing) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
-                    const volumes = interaction.options.getNumber("vol") / 100;
-                    console.log(dynamic.resource.volume.volume);
-                    console.log(volumes);
+                    const volumes = (interaction.options.getNumber("vol") / 100);
                     dynamic.resource.volume.volume = volumes;
+                    dynamic.volumes = volumes;
                     interaction.reply({
                         content: "音量が変更されました。",
                         embeds: [
@@ -261,7 +271,7 @@ client.on("interactionCreate", async interaction => {
                                 .setTitle("状態")
                                 .setDescription("現在の音量を表示します。")
                                 .addFields(
-                                    { name: "音量", value: volumes }
+                                    { name: "音量", value: String(volumes * 100) }
                                 )
                         ]
                     });
@@ -358,7 +368,7 @@ const ytplay = async () => {
         highWaterMark: 32 * 1024 * 1024, //わからん
     });
     dynamic.resource = createAudioResource(dynamic.stream, { inputType: StreamType.WebmOpus, inlineVolume: true }); //多分streamのデータを形式とともに入れる？
-    dynamic.resource.volume.setVolume(0.05);
+    dynamic.resource.volume.setVolume(dynamic.volumes);
 
     player.play(dynamic.resource); //再生
     dynamic.playing = true;
