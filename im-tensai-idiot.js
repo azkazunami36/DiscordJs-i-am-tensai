@@ -139,16 +139,13 @@ client.on("ready", async () => {
 });
 client.on("messageCreate", async message => {
     if (message.author.bot) return;
-    let outputcontent = message.content;
-    if (message.content.match(/<@[0-9]{17,}>/g) != null) {
-        for (let i = 0; i != message.content.match(/<@[0-9]{17,}>/g).length; i++) {
-            let yellow = "\u001b[33m";
-            let cyan = "\u001b[36m";
-            const regexp = new RegExp("<@" + message.content.match(/<@[0-9]{17,}>/g)[i].match(/[0-9]{17,}/g)[0] + ">");
-            outputcontent = outputcontent.replace(regexp, yellow + client.users.cache.get(message.content.match(/<@[0-9]{17,}>/g)[i].match(/[0-9]{17,}/g)[0]).username + cyan);
-        };
+    let outc = message.content;
+    let intc = outc.match(/<@[0-9]{17,}>/g);
+    if (intc != null) for (let i = 0; i != intc.length; i++) {
+        let intt = intc[i].match(/[0-9]{17,}/g)[0];
+        outc = outc.replace(new RegExp("<@" + intt + ">"), "\u001b[33m" + client.users.cache.get(intt).username + "\u001b[36m");
     };
-    output("gettext", outputcontent, message.author.username, message.author.discriminator);
+    output("gettext", outc, message.author.username, message.author.discriminator);
     const my_mentions = message.mentions.users.has(client.user.id) || message.mentions.roles.some(r => [client.user.username].includes(r.name)) ? true : false;
     if (dynamic.reply) {
         if (my_mentions || message.content == "天才ばか" || message.content == "天才バカ") {
