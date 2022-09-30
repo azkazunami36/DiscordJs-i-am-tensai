@@ -11,6 +11,7 @@ import path from "path";
 import log4js from "log4js";
 import readline from "readline";
 import ytdl from "ytdl-core";
+import util from "node:util"; const wait = util.promisify(setTimeout);
 import {
     Client,
     GatewayIntentBits,
@@ -48,31 +49,31 @@ const client = new Client({
 const basedata = {
     commandlist: [
         new SlashCommandBuilder()
-            .setName("add")
-            .setDescription("URLを指定して、動画を追加します！")
-            .addStringOption(option => option
-                .setName("url")
-                .setDescription("URLを入力しましょう！")
+            .setName("voice")
+            .setDescription("ボイスチャンネルで音楽などを流せます！")
+            .addSubcommand(subcommand => subcommand
+                .setName("add")
+                .setDescription("URLを指定して、動画を追加します！")
+                .addStringOption(option => option
+                    .setName("url")
+                    .setDescription("URLを入力しましょう！")
+                )
             )
-        ,
-        new SlashCommandBuilder()
-            .setName("play")
-            .setDescription("あなたが居るVCに参加し、音楽をぶちまけます！")
-        ,
-        new SlashCommandBuilder()
-            .setName("stop")
-            .setDescription("不本意ながら、VCから抜けて音楽を止めます...")
-        ,
-        new SlashCommandBuilder()
-            .setName("skip")
-            .setDescription("もしも今曲を再生していて、リストに複数の曲があれば切り替えます～")
-        ,
-        new SlashCommandBuilder()
-            .setName("volume")
-            .setDescription("音量を調節します！")
-            .addNumberOption(option => option
-                .setName("vol")
-                .setDescription("0～100の間で入力をしてくださいっ(^-^)/")
+            .addSubcommand(subcommand => subcommand
+                .setName("play")
+                .setDescription("あなたが居るVCに参加し、音楽をぶちまけます！")
+            )
+            .addSubcommand(subcommand => subcommand
+                .setName("stop")
+                .setDescription("不本意ながら、VCから抜けて音楽を止めます...")
+            )
+            .addSubcommand(subcommand => subcommand
+                .setName("volume")
+                .setDescription("音量を調節します！")
+                .addNumberOption(option => option
+                    .setName("vol")
+                    .setDescription("0～100の間で入力をしてくださいっ(^-^)/")
+                )
             )
         ,
         new SlashCommandBuilder()
@@ -138,9 +139,47 @@ client.on("ready", async () => {
 });
 client.on("messageCreate", async message => {
     if (message.author.bot) return;
-    output("gettext", message.content, message.author.username, message.author.discriminator);
-    if (message.content == "テスト") {
-        message.reply("なんだと！？");
+    var outputcontent = message.content;
+    if (message.content.match(/<@[0-9]{17,}>/g) != null) {
+        for (let i = 0; i != message.content.match(/<@[0-9]{17,}>/g).length; i++) {
+            let yellow = "\u001b[33m";
+            let cyan = "\u001b[36m";
+            const regexp = new RegExp("<@" + message.content.match(/<@[0-9]{17,}>/g)[i].match(/[0-9]{17,}/g)[0] + ">");
+            outputcontent = outputcontent.replace(regexp, yellow + client.users.cache.get(message.content.match(/<@[0-9]{17,}>/g)[i].match(/[0-9]{17,}/g)[0]).username + cyan);
+        };
+    };
+    output("gettext", outputcontent, message.author.username, message.author.discriminator);
+    const my_mentions = message.mentions.users.has(client.user.id) || message.mentions.roles.some(r => [client.user.username].includes(r.name)) ? true : false;
+    if (dynamic.reply) {
+        if (my_mentions || message.content == "天才ばか" || message.content == "天才バカ") {
+            message.channel.sendTyping();
+            await wait(3500);
+            message.reply("まさか...呼んでくれた！？");
+
+        } else if (message.content.match(/招待URLを作って|招待URL作成して|招待URL作って|招待リンク作って|招待リンクを作って|招待リンクを作成して/)) {
+            message.channel.sendTyping();
+            await wait(1500);
+            message.reply("https://discord.gg/WEJGnEMhJJ じゃん！");
+            await wait(200);
+            message.channel.sendTyping();
+            await wait(2000);
+            message.reply("コピペしてねぇ！");
+
+        } else if (message.content.match(/hello|nice|idiot/)) {
+            message.channel.sendTyping();
+            await wait(4000);
+            message.reply("何て書いてあるのー？気になるなー()");
+
+        } else if (message.content.match(/天才|てんさい|すごい|ばか/)) {
+            message.channel.sendTyping();
+            await wait(1000);
+            message.reply("天才？");
+
+        } else if (message.content == "テスト") {
+            message.channel.sendTyping();
+            await wait(2000);
+            message.reply("なんだと！？");
+        };
     };
 });
 client.on("messageUpdate", async (oldmessage, newmessage) => {
@@ -152,81 +191,85 @@ client.on("interactionCreate", async interaction => {
     output("getcommand", interaction.commandName, interaction.member.user.username, interaction.member.user.discriminator);
 
     switch (interaction.commandName) {
-        case "add":
-            const url = interaction.options.getString("url");
-            if (!ytdl.validateURL(url)) return interaction.reply("`" + url + "`が理解できませんでした..."); //ytdlがURL解析してくれるらしい
-            dynamic.vilist.push({ url: url, username: interaction.user.username });
-            var embedtext = new EmbedBuilder()
-                .setTitle("現在の再生リスト")
-                .setDescription("このリスト内のものを上から順に再生します。");
-            for (let i = 0; i != dynamic.vilist.length; i++) {
-                embedtext.addFields({ name: (i + 1) + "本目", value: "```" + "追加者: " + dynamic.vilist[i].username + "\nURL: " + dynamic.vilist[i].url + "```" });
+        case "voice":
+            switch (interaction.options.getSubcommand()) {
+                case "add":
+                    const url = interaction.options.getString("url");
+                    if (!ytdl.validateURL(url)) return interaction.reply("`" + url + "`が理解できませんでした..."); //ytdlがURL解析してくれるらしい
+                    dynamic.vilist.push({ url: url, username: interaction.user.username });
+                    var embedtext = new EmbedBuilder()
+                        .setTitle("現在の再生リスト")
+                        .setDescription("このリスト内のものを上から順に再生します。");
+                    for (let i = 0; i != dynamic.vilist.length; i++) {
+                        embedtext.addFields({ name: (i + 1) + "本目", value: "```" + "追加者: " + dynamic.vilist[i].username + "\nURL: " + dynamic.vilist[i].url + "```" });
+                    };
+                    interaction.reply({
+                        content: "追加ができました！",
+                        embeds: [embedtext]
+                    });
+                    output("listdata", dynamic.vilist);
+                    break;
+                case "play":
+                    if (dynamic.playing) return interaction.reply("既に再生をしています。");
+                    if (!interaction.member.voice.channel) return message.reply(message.author.username + "さんがボイスチャットにいません...\n入ってからまたやってみてくださいね！");
+                    output("listdata", dynamic.vilist);
+                    if (!dynamic.vilist[0]) return interaction.reply("プレイリストが空です...`add [URL]`でプレイリストに追加してください！");
+                    dynamic.connection = joinVoiceChannel({ //うまく説明はできないけど、ボイスチャンネル参加
+                        adapterCreator: interaction.guild.voiceAdapterCreator, //わからん
+                        channelId: interaction.member.voice.channel.id, //VoiceChannelを設定
+                        guildId: interaction.guildId, //サーバーIDを設定
+                        selfDeaf: true //多分スピーカーミュート
+                    });
+                    ytplay();
+                    interaction.reply({
+                        content: "再生を開始します。プレイ中リンク:`" + dynamic.vilist[0].url + "`",
+                        embeds: [
+                            new EmbedBuilder()
+                                .setTitle("状態")
+                                .setDescription("現在再生中のものを表示します。")
+                                .addFields(
+                                    { name: "URL", value: dynamic.vilist[0].url },
+                                    { name: "追加者", value: dynamic.vilist[0].username }
+                                )
+                        ]
+                    });
+                    break;
+                case "stop":
+                    if (!dynamic.playing) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
+                    dynamic.stream.destroy(); //ストリームの切断？わからん
+                    dynamic.connection.destroy(); //VCの切断
+                    interaction.reply("再生を停止します。");
+                    dynamic.playing = false;
+                    break;
+                case "skip":
+                    if (!dynamic.playing) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
+                    dynamic.stream.destroy(); //ストリームの切断？わからん
+                    output("listdata", dynamic.vilist);
+                    if (dynamic.vilist[0]) {
+                        ytplay();
+                    } else {
+                        interaction.reply("うまく動作ができていません。エラーの可能性がありますので、この状態になるまでの動きを\n`あんこかずなみ36#5008`にお伝えください。ログには記録済みです。");
+                    };
+                    break;
+                case "volume":
+                    if (!dynamic.playing) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
+                    const volumes = interaction.options.getNumber("vol") / 100;
+                    console.log(dynamic.resource.volume.volume);
+                    console.log(volumes);
+                    dynamic.resource.volume.volume = volumes;
+                    interaction.reply({
+                        content: "音量が変更されました。",
+                        embeds: [
+                            new EmbedBuilder()
+                                .setTitle("状態")
+                                .setDescription("現在の音量を表示します。")
+                                .addFields(
+                                    { name: "音量", value: volumes }
+                                )
+                        ]
+                    });
+                    break;
             };
-            interaction.reply({
-                content: "追加ができました！",
-                embeds: [embedtext]
-            });
-            output("listdata", dynamic.vilist);
-            break;
-        case "play":
-            if (dynamic.playing) return interaction.reply("既に再生をしています。");
-            if (!interaction.member.voice.channel) return message.reply(message.author.username + "さんがボイスチャットにいません...\n入ってからまたやってみてくださいね！");
-            output("listdata", dynamic.vilist);
-            if (!dynamic.vilist[0]) return interaction.reply("プレイリストが空です...`add [URL]`でプレイリストに追加してください！");
-            dynamic.connection = joinVoiceChannel({ //うまく説明はできないけど、ボイスチャンネル参加
-                adapterCreator: interaction.guild.voiceAdapterCreator, //わからん
-                channelId: interaction.member.voice.channel.id, //VoiceChannelを設定
-                guildId: interaction.guildId, //サーバーIDを設定
-                selfDeaf: true //多分スピーカーミュート
-            });
-            ytplay();
-            interaction.reply({
-                content: "再生を開始します。プレイ中リンク:`" + dynamic.vilist[0].url + "`",
-                embeds: [
-                    new EmbedBuilder()
-                        .setTitle("状態")
-                        .setDescription("現在再生中のものを表示します。")
-                        .addFields(
-                            { name: "URL", value: dynamic.vilist[0].url },
-                            { name: "追加者", value: dynamic.vilist[0].username }
-                        )
-                ]
-            });
-            break;
-        case "stop":
-            if (!dynamic.playing) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
-            dynamic.stream.destroy(); //ストリームの切断？わからん
-            dynamic.connection.destroy(); //VCの切断
-            interaction.reply("再生を停止します。");
-            dynamic.playing = false;
-            break;
-        case "skip":
-            if (!dynamic.playing) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
-            dynamic.stream.destroy(); //ストリームの切断？わからん
-            output("listdata", dynamic.vilist);
-            if (dynamic.vilist[0]) {
-                ytplay();
-            } else {
-                interaction.reply("うまく動作ができていません。エラーの可能性がありますので、この状態になるまでの動きを\n`あんこかずなみ36#5008`にお伝えください。ログには記録済みです。");
-            };
-            break;
-        case "volume":
-            if (!dynamic.playing) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
-            const volumes = interaction.options.getNumber("vol") / 100;
-            console.log(dynamic.resource.volume.volume);
-            console.log(volumes);
-            dynamic.resource.volume.volume = volumes;
-            interaction.reply({
-                content: "音量が変更されました。",
-                embeds: [
-                    new EmbedBuilder()
-                        .setTitle("状態")
-                        .setDescription("現在の音量を表示します。")
-                        .addFields(
-                            { name: "音量", value: volumes }
-                        )
-                ]
-            });
             break;
         case "change":
             var type = {
@@ -277,7 +320,29 @@ client.on("interactionCreate", async interaction => {
                 interaction.reply("変更内容がありませんでした....\nもう一度やり直しましょう！");
             };
             break;
+        case "help":
+            interaction.reply("様々なヘルプを表示します！");
+            interaction.followUp({
+                embeds: [
+                    new EmbedBuilder()
+                        .setTitle("ヘルプ")
+                        .setDescription("どういう動きをするかや、コマンドの一覧を表示します！")
+                        .addFields({ name: ":one: /voice", value: "ボイスチャンネルで音楽などを流せます！\n`add [URL]` URLを指定して、動画を追加します！\n`play` あなたが居るVCに参加し、音楽をぶちまけます！\n`stop` VCから抜けて音楽を止めます...\n`volume`0～100の間で入力をしてくださいっ(^-^)/" })
+                        .addFields({ name: ":two: /change", value: "botの反応とかいろいろな機能をオンオフできます！\n`reaction [True/False]` メッセージにリアクションするかどうかを切り替えますよ～\n`reply` メッセージに返信するかどうかを切り替えますよ～\n`statusd` オンラインからオフラインなど、様々なステータスに変更できます！\n`statustext [Text]` ステータスの名前を設定できます！" })
+                        .addFields({ name: ":three: /help", value: "" })
+                        .addFields({ name: ":YouTube:", value: "[あんこかずなみ36](https://www.youtube.com/channel/UCOBiNYsubLw-zAOqg74jUww)", inline: true })
+                        .addFields({ name: ":YouTube Live:", value: "[あんこかずなみ36ずっとライブ](https://www.youtube.com/channel/UCPAjnCNTKQ7XaJ8PWTDpsvw)", inline: true })
+                        .addFields({ name: "返信など...", value: "僕は特定の文字が入ったチャットに反応を見せることがあります！\n色々喋ったりしてみましょうっ\nこの機能は`/change`コマンドで切り替えることが可能です。" })
+                        .setColor(4303284)
+                        .setTimestamp()
+                ]
+            });
+            break;
     };
+});
+client.on("messageReactionAdd", (MessageReaction, User) => {
+});
+client.on("messageReactionRemove", (MessageReaction, User) => {
 });
 const ytplay = async () => {
     var url;
