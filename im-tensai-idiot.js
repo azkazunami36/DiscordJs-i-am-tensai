@@ -99,14 +99,14 @@ const output = async (set, text1, text2, text3) => {
             type = "command";
             color = yellow;
             try {
-                out += "コマンド" + cyan + text1.replace(/\r?\n/g, " ");
+                out += "コマンド: " + cyan + text1.replace(/\r?\n/g, " ") + white + "が入力されました。";
             } catch (e) { output(outState.Error, e) };
             break;
         case "getsubcommand":
             type = "command";
             color = yellow;
             try {
-                out += "サブコマンド" + cyan + text1.replace(/\r?\n/g, " ") + white + " オプション:" + text2;
+                out += "サブコマンド :" + cyan + text1.replace(/\r?\n/g, " ") + white + " オプション:" + text2;
             } catch (e) { output(outState.Error, e) };
             break;
         case "getname":
@@ -719,16 +719,16 @@ client.on("messageCreate", async message => {
                         if (outtext == NaN || text == NaN || out1 == NaN || out2 == NaN || outtext == undefined || text == undefined || out1 == undefined || out2 == undefined) {
                             await wait(2000);
                             message.reply("うーん....");
-                            await wait(200);
+                            await wait(600);
                             message.channel.sendTyping();
                             await wait(3000);
                             message.reply("その問題はよくわからない...(計算だと思ってたけど、そもそも計算じゃない....のかも)");
                         } else {
                             await wait(4000);
                             message.reply("えっと...答えは" + String(calcstring(outtext, out1)) + "かな...？");
-                            await wait(5000);
-                            message.channel.sendTyping();
                             await wait(2000);
+                            message.channel.sendTyping();
+                            await wait(2500);
                             message.reply("あっ！違った！" + String(calcstring(outtext, out2)) + "だ！");
                         };
                     } else if (["初めまして！", "こんちは", "こんちはー", "こんにちは", "こんにちはー", "こんばんは", "こんばんはー", "こんばんにちは", "おはよう", "おはよ", "どうも", "おはこんばんにちは", "おはようございます", "こんちゃ", "おは", "おっは", "おっはー", "やっほー", "ヤッホ", "ヤッホー", "どーも", "ども", "どーもー", "どうもー", "やほ", "やほー", "やほう", "やほぅ", "こンンちはー"].includes(message.content)) {
@@ -819,8 +819,8 @@ client.on("messageCreate", async message => {
                         await wait(3000);
                         message.reply("「" + "」の意味が僕にはわからなかった...後で勉強してくるから、その意味が分かったらしっかり答えるねっ");
                     };
-                } catch (e) { 
-                    output(outState.Error, e); 
+                } catch (e) {
+                    output(outState.Error, e);
                     await wait(1500);
                     message.reply("ごめんね...今ねエラーになっちゃった...");
                     await wait(1600);
@@ -869,7 +869,7 @@ client.on("interactionCreate", async interaction => {
                     case "play":
                         output(outState.GetSubCommand, "play");
                         if (dynamic.playing) return interaction.reply("既に再生をしています。");
-                        if (!interaction.member.voice.channel) return message.reply(message.author.username + "さんがボイスチャットにいません...\n入ってからまたやってみてくださいね！");
+                        if (!interaction.member.voice.channel) return interaction.reply(interaction.member.user.username + "さんがボイスチャットにいません...\n入ってからまたやってみてくださいね！");
                         if (!dynamic.vilist[0]) return interaction.reply("プレイリストが空です...`add [URL]`でプレイリストに追加してください！");
                         dynamic.connection = joinVoiceChannel({ //うまく説明はできないけど、ボイスチャンネル参加
                             adapterCreator: interaction.guild.voiceAdapterCreator, //わからん
@@ -1027,14 +1027,14 @@ const ytplay = async () => {
             dynamic.resource.volume.setVolume(dynamic.volumes / 100); //音量調節
 
             player.play(dynamic.resource); //再生
+            await entersState(player, AudioPlayerStatus.Playing); //再生が始まるまでawaitで待機
+            await entersState(player, AudioPlayerStatus.Idle); //再生リソースがなくなる(再生が終わる)まで待機
+            ytplay();
         } catch (e) {
             dynamic.stream.destroy();
             dynamic.connection.destroy();
             output(outState.Error, e);
         };
-        await entersState(player, AudioPlayerStatus.Playing); //再生が始まるまでawaitで待機
-        await entersState(player, AudioPlayerStatus.Idle); //再生リソースがなくなる(再生が終わる)まで待機
-        ytplay();
     } catch (e) { output(outState.Error, e); };
 };
 
