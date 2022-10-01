@@ -38,7 +38,7 @@ const outState = {
 * @param text2 - 入力用2
 * @param text3 - 入力用3
 */
-const output = (set, text1, text2, text3) => {
+const output = async (set, text1, text2, text3) => {
     let black = "\u001b[30m";
     let red = "\u001b[31m";
     let green = "\u001b[32m";
@@ -121,143 +121,86 @@ const output = (set, text1, text2, text3) => {
     console.log(nowTime + ":" + color + type + space + white + ": " + out);
 };
 /**
- * 
- * @param text - 絵文字変化
- * @returns - 出力
- */
-const emojichange = text => {
-    var q = text.replace(/\r?\n/g, " ");
-    var emoji = [
-        {
-            "ID": "emoji_1",
-            "name": "草"
-        },
-        {
-            "ID": "emoji_2",
-            "name": "最高"
-        },
-        {
-            "ID": "emoji_3",
-            "name": "悲しみ"
-        },
-        {
-            "ID": "emoji_4",
-            "name": "おつです。"
-        },
-        {
-            "ID": "emoji_5",
-            "name": "了解です。"
-        },
-        {
-            "ID": "emoji_6",
-            "name": "なるほど"
-        },
-        {
-            "ID": "emoji_7",
-            "name": "それな"
-        },
-        {
-            "ID": "emoji_8",
-            "name": "神"
-        },
-        {
-            "ID": "emoji_9",
-            "name": "むりせず"
-        },
-        {
-            "ID": "emoji_10",
-            "name": "お大事に"
-        },
-        {
-            "ID": "emoji_11",
-            "name": "ひえっ"
-        },
-        {
-            "ID": "emoji_12",
-            "name": "どんまい"
-        },
-        {
-            "ID": "emoji_13",
-            "name": "地獄"
-        },
-        {
-            "ID": "emoji_14",
-            "name": "やったね"
-        },
-        {
-            "ID": "emoji_15",
-            "name": "それはそう"
-        },
-        {
-            "ID": "emoji_16",
-            "name": "わかる"
-        },
-        {
-            "ID": "emoji_17",
-            "name": "寝て"
-        },
-        {
-            "ID": "emoji_18",
-            "name": "すごい！"
-        },
-        {
-            "ID": "emoji_19",
-            "name": "やさしい"
-        },
-        {
-            "ID": "emoji_20",
-            "name": "強い"
-        },
-        {
-            "ID": "emoji_21",
-            "name": "え？"
-        },
-        {
-            "ID": "emoji_22",
-            "name": "無理せず"
-        },
-        {
-            "ID": "emoji_23",
-            "name": "ええんやで"
-        },
-        {
-            "ID": "emoji_24",
-            "name": "百里ある"
-        },
-        {
-            "ID": "emoji_25",
-            "name": "いいね！"
-        },
-        {
-            "ID": "emoji_26",
-            "name": "ようこそ"
-        },
-        {
-            "ID": "emoji_27",
-            "name": ""
-        },
-        {
-            "ID": "emoji_28",
-            "name": "にっこり"
-        },
-        {
-            "ID": "emoji_29",
-            "name": ""
-        },
-        {
-            "ID": "emoji_30",
-            "name": "わぁい"
-        },
-        {
-            "ID": "emoji_31",
-            "name": "池"
-        }
-    ];
-    for (let i = emoji.length - 1; i > (0 - 1); i--) {
-        var regexp = new RegExp(emoji[i].ID, 'g');
-        q = q.replace(regexp, "絵文字、" + emoji[i].name);
+* VoiceStatus用`embed`を作成する関数です。
+* @param p
+*  - 再生中の曲を表示するかどうかを決めます。
+*       - 0で非表示
+*       - 1で表示
+* @param l 
+* - 再生リストを表示するかどうかを決めます。
+*       - 0で非表示
+*       - 1で表示
+* @param v 
+* - 音量を表示するかどうかを決めます。
+*      - 0で非表示
+*      - 1で表示
+* @param t
+* - サムネイルを表示するかどうかを決めます。
+*      - 0で非表示
+*      - 1でプレイ中のサムネイルを表示
+*      - 2でプレイリストの最後のサムネイルを表示
+* @param content - メッセージ内容を入力します。
+* @returns {*} - 出力
+*/
+const voicestatus = async (p, l, v, r, t, content) => {
+    let vilist = "";
+    let viplay = "```タイトル: " + dynamic.playmeta.title + "\n動画時間: " + (await timeString(dynamic.playmeta.time)) + "\nURL: https://youtu.be/" + dynamic.playmeta.url + "\n追加者: " + dynamic.playmeta.name + "```";
+    for (let i = 0; i != dynamic.vilist.length; i++) {
+        vilist += (i + 1) + "本目";
+        if (i == 0) vilist += "(次再生されます。)";
+        let seconds, minutes = 0, hour = 0;
+        seconds = dynamic.vilist[i].time;
+        for (minutes; seconds > 59; minutes++) seconds -= 60;
+        for (hour; minutes > 59; hour++) minutes -= 60;
+        vilist += "\n```タイトル: " + dynamic.vilist[i].title + "\n動画時間: " + (await timeString(dynamic.vilist[i].time)) + "\nURL: https://youtu.be/" + dynamic.vilist[i].url + "\n追加者: " + dynamic.vilist[i].username + "```";
     };
-    return q;
+    if (!dynamic.vilist[0]) vilist = "リストの内容はありません。";
+    if (!dynamic.playing) viplay = "現在再生されていません。";
+    let embed = new EmbedBuilder().setTitle("状態");
+    let description = "主に";
+    if (p == 1) {
+        embed.addFields({ name: "再生中の曲の詳細", value: viplay });
+        if (description != "主に") description += "、";
+        description += "再生中の曲";
+    };
+    if (l == 1) {
+        embed.addFields({ name: "再生リスト", value: vilist });
+        if (description != "主に") description += "、";
+        description += "再生リスト";
+    };
+    if (v == 1) {
+        embed.addFields({ name: "音量", value: String(dynamic.volumes) + "%" });
+        if (description != "主に") description += "、";
+        description += "音量";
+    };
+    if (r == 1) {
+        embed.addFields({ name: "リピート状態", value: String(dynamic.repeat) });
+        if (description != "主に") description += "、";
+        description += "リピート状態";
+    }
+    if (t == 1 && dynamic.playing) {
+        embed.setThumbnail(dynamic.playmeta.thumbnails);
+    } else if (t == 1 && !dynamic.playing || t == 2) {
+        if (dynamic.vilist[0]) embed.setThumbnail(dynamic.vilist[dynamic.vilist.length - 1].thumbnails);
+    };
+    description += "を表示します。";
+    if (p == 1 && l == 1 && v == 1) description = "全ての状態を表示します。";
+    embed.setDescription(description);
+    return { content: content, embeds: [embed] };
+};
+/**
+ * 秒のデータを文字列として置き換えます。
+ * @param seconds - 秒数を入力します。
+ * @returns - 時間、分、秒が組み合わさった文字列を出力します。
+ */
+const timeString = async seconds => {
+    let minutes = 0, hour = 0, timeset = "";
+    for (minutes; seconds > 59; minutes++) seconds -= 60;
+    for (hour; minutes > 59; hour++) minutes -= 60;
+    if (hour != 0) timeset += hour + "時間";
+    if (minutes != 0) timeset += minutes + "分";
+    if (seconds != 0) timeset += seconds + "秒";
+    return timeset;
 };
 //ここまで
 output(outState.Startup);
@@ -342,6 +285,22 @@ const basedata = {
                 .setName("skip")
                 .setDescription("強制的に次の曲にします！")
             )
+            .addSubcommand(subcommand => subcommand
+                .setName("repeat")
+                .setDescription("再生リストの内容を維持して、曲のリピートをします！")
+                .addBooleanOption(option => option
+                    .setName("bool")
+                    .setDescription("オンオフを切り替えましょうっ")
+                )
+            )
+            .addSubcommand(subcommand => subcommand
+                .setName("remove")
+                .setDescription("statusで見る再生リストの中から選んで削除しますっ")
+                .addNumberOption(option => option
+                    .setName("number")
+                    .setDescription("リストの番号を入力しましょっ！")
+                )
+            )
         ,
         new SlashCommandBuilder()
             .setName("help")
@@ -374,29 +333,86 @@ const basedata = {
             )
     ]
 };
+/**
+ * 変動する値を扱います。
+ */
 let dynamic = {
-    connection: "", //接続や切断を管理/ytplay用
-    stream: "", //ストリーム/ytplay用
-    resource: "", //プレイヤーの管理をするやつ？音量変更に使用
-    vilist: [], //プレイリスト機能に使用する。URLを入れる/ytplay用
-    playing: false, //再生中かどうかを判断
+    /**
+     * 接続や切断を管理/ytplay用
+     */
+    connection: "",
+    /**
+     * ストリーム/ytplay用
+     */
+    stream: "",
+    /**
+     * プレイヤーの管理をするやつ？音量変更に使用
+     */
+    resource: "",
+    /**
+     * プレイリスト機能に使用する。URLを入れる/ytplay用
+     */
+    vilist: [],
+    /**
+     * 再生中かどうかを判断
+     */
+    playing: false,
+    /**
+     * リピートかどうかを切り替える機能
+     */
+    repeat: false,
+    /**
+     * 再生中の動画のデータを格納
+     */
     playmeta: {
+        /**
+         * 動画を追加した人の名前
+         */
         name: "",
+        /**
+         * YouTubeのVideoID
+         */
         url: "",
+        /**
+         * 動画のタイトル
+         */
         title: "",
+        /**
+         * 動画の長さ
+         */
         time: "",
+        /**
+         * 動画のサムネイルURL
+         */
         thumbnails: ""
     },
-    volumes: 50, //音量を設定
+    /**
+     * 音量を設定
+     */
+    volumes: 50,
+    /**
+     * リアクション反応設定
+     */
     reaction: false,
+    /**
+     * チャット反応設定
+     */
     reply: false,
+    /**
+     * Botのステータス
+     */
     activities: {
         activities: [{
+            /**
+             * ステータス名
+             */
             name: "がちってるコード"
         }],
+        /**
+         * オンラインステータス
+         */
         status: "online"
-    },
-    timeout: ""
+    }
 };
 output(outState.NaN, "あなたのNode.jsのバージョンは" + process.version + "です。");
 output(outState.NaN, "本プログラムのDiscord.js動作推奨バージョンはv14.3.0です。");
@@ -477,7 +493,7 @@ client.on("interactionCreate", async interaction => {
                         thumbnails = th.split("?")[0];
                     });
                     dynamic.vilist.push({ url: videoid, username: uname, title: titled, time: time, thumbnails: thumbnails });
-                    interaction.editReply(await voicestatus(0, 1, 0, 2, "追加ができました！"));
+                    interaction.editReply(await voicestatus(0, 1, 0, 0, 2, "追加ができました！"));
                     break;
                 case "play":
                     if (dynamic.playing) return interaction.reply("既に再生をしています。");
@@ -490,22 +506,20 @@ client.on("interactionCreate", async interaction => {
                         selfDeaf: true //多分スピーカーミュート
                     });
                     ytplay();
-                    interaction.reply(await voicestatus(1, 1, 1, 1, "曲の再生を始めます！"));
+                    interaction.reply(await voicestatus(1, 1, 1, 1, 1, "曲の再生を始めます！"));
                     break;
                 case "stop":
                     if (!dynamic.playing) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
                     dynamic.stream.destroy(); //ストリームの切断
                     dynamic.connection.destroy(); //VCの切断
-                    clearTimeout(dynamic.timeout);
-                    interaction.reply(await voicestatus(0, 1, 0, 0, "曲を止めました...(´・ω・｀)"));
+                    interaction.reply(await voicestatus(0, 1, 0, 0, 0, "曲を止めました...(´・ω・｀)"));
                     dynamic.playing = false;
                     break;
                 case "skip":
                     if (!dynamic.playing) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
                     dynamic.stream.destroy(); //ストリームの切断
-                    clearTimeout(dynamic.timeout);
                     ytplay();
-                    interaction.reply((await voicestatus(1, 1, 1, 1, "次の曲を再生しますねぇ")));
+                    interaction.reply((await voicestatus(1, 1, 1, 1, 1, "次の曲を再生しますねぇ")));
                     break;
                 case "volume":
                     let volumes = (interaction.options.getNumber("vol"));
@@ -516,10 +530,23 @@ client.on("interactionCreate", async interaction => {
                     };
                     if (dynamic.playing) dynamic.resource.volume.volume = volumes / 100;
                     dynamic.volumes = volumes;
-                    interaction.reply(await voicestatus(0, 0, 1, 0, "音量を変更しました！"));
+                    interaction.reply(await voicestatus(0, 0, 1, 0, 0, "音量を変更しました！"));
                     break;
                 case "status":
-                    interaction.reply((await voicestatus(1, 1, 1, 1, "現在のすべての状態を表示しまーすっ")));
+                    interaction.reply((await voicestatus(1, 1, 1, 1, 1, "現在のすべての状態を表示しまーすっ")));
+                    break;
+                case "repeat":
+                    const type = interaction.options.getBoolean("bool");
+                    dynamic.repeat = type;
+                    interaction.reply(await voicestatus(0, 0, 0, 1, 0, "リピート状態を変更しましたっ！"));
+                    break;
+                case "remove":
+                    if (!dynamic.vilist[0]) return interaction.reply("プレイリストが空です...`add [URL]`でプレイリストに追加してください！");
+                    const number = interaction.options.getNumber("number");
+                    if (number > dynamic.vilist.length || number < 0) return interaction.reply("受け取った値がよろしくなかったようです...もう一度やり増しましょう...！");
+                    dynamic.vilist.splice((number - 1), 1);
+                    interaction.reply(await voicestatus(0, 1, 0, 0, 0, "削除しました～"));
+                    break;
             };
             break;
         case "change":
@@ -598,6 +625,7 @@ const ytplay = async () => {
         dynamic.playmeta.time = dynamic.vilist[0].time;
         dynamic.playmeta.thumbnails = dynamic.vilist[0].thumbnails;
         dynamic.vilist.shift();
+        if (dynamic.repeat) dynamic.vilist.push({ url: dynamic.playmeta.url, username: dynamic.playmeta.name, title: dynamic.playmeta.title, time: dynamic.playmeta.time, thumbnails: dynamic.playmeta.thumbnails });
     };
     dynamic.playing = true;
     let player = createAudioPlayer(); //多分音声を再生するためのもの
@@ -614,56 +642,6 @@ const ytplay = async () => {
     await entersState(player, AudioPlayerStatus.Playing); //再生が始まるまでawaitで待機
     await entersState(player, AudioPlayerStatus.Idle); //再生リソースがなくなる(再生が終わる)まで待機
     ytplay();
-};
-const voicestatus = async (p, l, v, t, content) => {
-    let vilist = "";
-    let viplay = "```タイトル: " + dynamic.playmeta.title + "\n動画時間: " + (await timeString(dynamic.playmeta.time)) + "\nURL: https://youtu.be/" + dynamic.playmeta.url + "\n追加者: " + dynamic.playmeta.name + "```";
-    for (let i = 0; i != dynamic.vilist.length; i++) {
-        vilist += (i + 1) + "本目";
-        if (i == 0) vilist += "(次再生されます。)";
-        let seconds, minutes = 0, hour = 0;
-        seconds = dynamic.vilist[i].time;
-        for (minutes; seconds > 59; minutes++) seconds -= 60;
-        for (hour; minutes > 59; hour++) minutes -= 60;
-        vilist += "\n```タイトル: " + dynamic.vilist[i].title + "\n動画時間: " + (await timeString(dynamic.vilist[i].time)) + "\nURL: https://youtu.be/" + dynamic.vilist[i].url + "\n追加者: " + dynamic.vilist[i].username + "```";
-    };
-    if (!dynamic.vilist[0]) vilist = "リストの内容はありません。";
-    if (!dynamic.playing) viplay = "現在再生されていません。";
-    let embed = new EmbedBuilder().setTitle("状態");
-    let description = "主に";
-    if (p == 1) {
-        embed.addFields({ name: "再生中の曲の詳細", value: viplay });
-        if (description != "主に") description += "、";
-        description += "再生中の曲";
-    };
-    if (l == 1) {
-        embed.addFields({ name: "再生リスト", value: vilist });
-        if (description != "主に") description += "、";
-        description += "再生リスト";
-    };
-    if (v == 1) {
-        embed.addFields({ name: "音量", value: String(dynamic.volumes) + "%" });
-        if (description != "主に") description += "、";
-        description += "音量";
-    };
-    if (t == 1 && dynamic.playing) {
-        embed.setThumbnail(dynamic.playmeta.thumbnails);
-    } else if (t == 1 && !dynamic.playing || t == 2) {
-        if (dynamic.vilist[0]) embed.setThumbnail(dynamic.vilist[dynamic.vilist.length - 1].thumbnails);
-    };
-    description += "を表示します。";
-    if (p == 1 && l == 1 && v == 1) description = "全ての状態を表示します。";
-    embed.setDescription(description);
-    return { content: content, embeds: [embed] };
-};
-const timeString = async seconds => {
-    let minutes = 0, hour = 0, timeset = "";
-    for (minutes; seconds > 59; minutes++) seconds -= 60;
-    for (hour; minutes > 59; hour++) minutes -= 60;
-    if (hour != 0) timeset += hour + "時間";
-    if (minutes != 0) timeset += minutes + "分";
-    if (seconds != 0) timeset += seconds + "秒";
-    return timeset;
 };
 
 output(outState.Connecting);
