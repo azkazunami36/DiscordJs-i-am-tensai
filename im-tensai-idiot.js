@@ -3,15 +3,15 @@
  */
 const outState = {
     /**
-     * botを起動する際に使用します。
+     * Botを起動する際に使用します。
      */
     Startup: "startup",
     /**
-     * botをdiscordに接続する際に使用します。
+     * BotをDiscordに接続する際に使用します。
      */
     Connecting: "connecting",
     /**
-     * botがDiscordに接続された際に使用します。
+     * BotがDiscordに接続された際に使用します。
      */
     Ready: "ready",
     /**
@@ -19,11 +19,23 @@ const outState = {
      */
     GetText: "gettext",
     /**
+     * チャット等の送信者を表示する際に使用します。
+     */
+    GetName: "getname",
+    /**
+     * チャットなどの送信場所を表示する際に使用します。
+     */
+    GetLocation: "getlocation",
+    /**
      * `interactionCreate`にてコマンドを受け取った際に使用します。
      */
     GetCommand: "getcommand",
     /**
-     * Discorsに使用するトークンの存在が確認できなかった場合に使用します。
+     * `interactionCreate`にてサブコマンドを受け取った際に使用します。
+     */
+    GetSubCommand: "getsubcommand",
+    /**
+     * Discordに使用するトークンの存在が確認できなかった場合に使用します。
      */
     NotToken: "nottoken",
     /**
@@ -77,7 +89,40 @@ const output = async (set, text1, text2, text3) => {
         case "gettext":
             type = "chat";
             color = yellow;
-            out += green + text2 + "#" + text3 + white + "さんが" + cyan + text1.replace(/\r?\n/g, " ") + white + "を入力しました。";
+            out += cyan + text1.replace(/\r?\n/g, " ") + white + "を入力しました。";
+            break;
+        case "getcommand":
+            type = "command";
+            color = yellow;
+            out += "コマンド" + cyan + text1.replace(/\r?\n/g, " ");
+            break;
+        case "getsubcommand":
+            type = "command";
+            color = yellow;
+            out += "サブコマンド" + cyan + text1.replace(/\r?\n/g, " ");
+            break;
+        case "getname":
+            type = "author";
+            color = yellow;
+            out += "送信者: " + green + text1 + "#" + text2 + white;
+            break;
+        case "getlocation":
+            type = "location";
+            color = yellow;
+            let servicetype = "";
+            if (text1 == ChannelType.GuildText) servicetype = "GuildText";
+            if (text1 == ChannelType.DM) servicetype = "DM";
+            if (text1 == ChannelType.GuildVoice) servicetype = "GuildVoice";
+            if (text1 == ChannelType.GroupDM) servicetype = "GroupDM";
+            if (text1 == ChannelType.GuildCategory) servicetype = "GuildCategory";
+            if (text1 == ChannelType.GuildAnnouncement) servicetype = "GuildAnnouncement";
+            if (text1 == ChannelType.AnnouncementThread) servicetype = "AnnouncementThread";
+            if (text1 == ChannelType.PublicThread) servicetype = "PublicThread";
+            if (text1 == ChannelType.PrivateThread) servicetype = "PrivateThread";
+            if (text1 == ChannelType.GuildStageVoice) servicetype = "GuildStageVoice";
+            if (text1 == ChannelType.GuildDirectory) servicetype = "GuildDirectory";
+            if (text1 == ChannelType.GuildForum) servicetype = "GuildForum";
+            out += "受信エリア サービス: " + green + servicetype + white + " サーバーID: " + green + text2 + white + " チャンネルID: " + green + text3 + white;
             break;
         case "nottoken":
             type = "error";
@@ -104,11 +149,6 @@ const output = async (set, text1, text2, text3) => {
                 out += " " + green + text1 + white + " ";
             };
             break;
-        case "getcommand":
-            type = "chat";
-            color = yellow;
-            out += green + text2 + "#" + text3 + white + "さんが" + cyan + text1.replace(/\r?\n/g, " ") + white + "のコマンドを入力しました。";
-            break;
         default:
             type = "unknown";
             color = yellow;
@@ -121,27 +161,29 @@ const output = async (set, text1, text2, text3) => {
     console.log(nowTime + ":" + color + type + space + white + ": " + out);
 };
 /**
-* VoiceStatus用`embed`を作成する関数です。
-* @param p
-*  - 再生中の曲を表示するかどうかを決めます。
-*       - 0で非表示
-*       - 1で表示
-* @param l 
-* - 再生リストを表示するかどうかを決めます。
-*       - 0で非表示
-*       - 1で表示
-* @param v 
-* - 音量を表示するかどうかを決めます。
-*      - 0で非表示
-*      - 1で表示
-* @param t
-* - サムネイルを表示するかどうかを決めます。
-*      - 0で非表示
-*      - 1でプレイ中のサムネイルを表示
-*      - 2でプレイリストの最後のサムネイルを表示
-* @param content - メッセージ内容を入力します。
-* @returns {*} - 出力
-*/
+ * VoiceStatus用`embed`を作成する関数です。
+ * @param p 
+ * 1番目
+ *  - 再生中の曲を表示するかどうかを決めます。
+ *       - 0で非表示(以下略
+ *       - 1で表示(以下略
+ * @param l 
+ * 2番目
+  * - 再生リストを表示するかどうかを決めます。
+ * @param v 
+ * 3番目
+ * - 音量を表示するかどうかを決めます。
+ * @param r 
+ * 4番目
+ * - リピート状態を表示するかどうかを決めます。
+ * @param t 
+ * 5番目
+ * - サムネイルを表示するかどうかを決めます。
+ *      - 1でプレイ中のサムネイルを表示
+ *      - 2でプレイリストの最後のサムネイルを表示
+ * @param content - メッセージ内容を入力します。
+ * @returns {*} - 出力
+ */
 const voicestatus = async (p, l, v, r, t, content) => {
     let vilist = "";
     let viplay = "```タイトル: " + dynamic.playmeta.title + "\n動画時間: " + (await timeString(dynamic.playmeta.time)) + "\nURL: https://youtu.be/" + dynamic.playmeta.url + "\n追加者: " + dynamic.playmeta.name + "```";
@@ -184,7 +226,7 @@ const voicestatus = async (p, l, v, r, t, content) => {
         if (dynamic.vilist[0]) embed.setThumbnail(dynamic.vilist[dynamic.vilist.length - 1].thumbnails);
     };
     description += "を表示します。";
-    if (p == 1 && l == 1 && v == 1) description = "全ての状態を表示します。";
+    if (p == 1 && l == 1 && v == 1 && r == 1) description = "全ての状態を表示します。";
     embed.setDescription(description);
     return { content: content, embeds: [embed] };
 };
@@ -434,38 +476,46 @@ client.on("messageCreate", async message => {
         let intt = intc[i].match(/[0-9]{17,}/g)[0];
         outc = outc.replace(new RegExp("<@" + intt + ">"), "\u001b[33m" + client.users.cache.get(intt).username + "\u001b[36m");
     };
-    output(outState.GetText, outc, message.author.username, message.author.discriminator);
+    output(outState.GetText, outc);
+    output(outState.GetName, message.author.username, message.author.discriminator);
+    output(outState.GetLocation, message.channel.type, message.guild.id, message.channnelid);
     const my_mentions = message.mentions.users.has(client.user.id) || message.mentions.roles.some(r => [client.user.username].includes(r.name)) ? true : false;
-    if (dynamic.reply) {
-        if (my_mentions || message.content == "天才ばか" || message.content == "天才バカ") {
-            message.channel.sendTyping();
-            await wait(3500);
-            message.reply("まさか...呼んでくれた！？");
+    switch (message.channel.type) {
+        case ChannelType.GuildText:
+            if (dynamic.reply) {
+                if (my_mentions || message.content == "天才ばか" || message.content == "天才バカ") {
+                    message.channel.sendTyping();
+                    await wait(3500);
+                    message.reply("まさか...呼んでくれた！？");
 
-        } else if (message.content.match(/招待URLを作って|招待URL作成して|招待URL作って|招待リンク作って|招待リンクを作って|招待リンクを作成して/)) {
-            message.channel.sendTyping();
-            await wait(1500);
-            message.reply("https://discord.gg/WEJGnEMhJJ じゃん！");
-            await wait(200);
-            message.channel.sendTyping();
-            await wait(2000);
-            message.reply("コピペしてねぇ！");
+                } else if (message.content.match(/招待URLを作って|招待URL作成して|招待URL作って|招待リンク作って|招待リンクを作って|招待リンクを作成して/)) {
+                    message.channel.sendTyping();
+                    await wait(1500);
+                    message.reply("https://discord.gg/WEJGnEMhJJ じゃん！");
+                    await wait(200);
+                    message.channel.sendTyping();
+                    await wait(2000);
+                    message.reply("コピペしてねぇ！");
 
-        } else if (message.content.match(/hello|nice|idiot/)) {
-            message.channel.sendTyping();
-            await wait(4000);
-            message.reply("何て書いてあるのー？気になるなー()");
+                } else if (message.content.match(/hello|nice|idiot/)) {
+                    message.channel.sendTyping();
+                    await wait(4000);
+                    message.reply("何て書いてあるのー？気になるなー()");
 
-        } else if (message.content.match(/天才|てんさい|すごい|ばか/)) {
-            message.channel.sendTyping();
-            await wait(1000);
-            message.reply("天才？");
+                } else if (message.content.match(/天才|てんさい|すごい|ばか/)) {
+                    message.channel.sendTyping();
+                    await wait(1000);
+                    message.reply("天才？");
 
-        } else if (message.content == "テスト") {
-            message.channel.sendTyping();
-            await wait(2000);
-            message.reply("なんだと！？");
-        };
+                } else if (message.content == "テスト") {
+                    message.channel.sendTyping();
+                    await wait(2000);
+                    message.reply("なんだと！？");
+                };
+            };
+            break;
+        case ChannelType.DM:
+            break;
     };
 });
 client.on("messageUpdate", async (oldmessage, newmessage) => {
