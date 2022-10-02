@@ -40,6 +40,7 @@ const outState = {
     Raw: "raw",
     /**
      * Discordに使用するトークンの存在が確認できなかった場合に使用します。
+     * 現在は使用できません。
      */
     NotToken: "nottoken",
     /**
@@ -170,9 +171,6 @@ const output = async (set, text1, text2, text3) => {
             color = red;
             out = "エラーです... => " + text1;
             break;
-        case "raw":
-            out = text1;
-            raw = true;
         default:
             type = "unknown";
             color = yellow;
@@ -182,10 +180,7 @@ const output = async (set, text1, text2, text3) => {
     for (let i = 0; i < (9 - type.length); i++) {
         space += " ";
     };
-    let consoleout = "";
-    if (!raw) consoleout = nowTime + ":" + color + type + space + white + ": " + out
-    if (raw) consoleout = out
-    console.log(consoleout);
+    console.log(nowTime + ":" + color + type + space + white + ": " + out);
 };
 /**
  * VoiceStatus用`embed`を作成する関数です。
@@ -324,6 +319,7 @@ import log4js from "log4js";
 import readline from "readline";
 import ytdl from "ytdl-core";
 import util from "node:util"; const wait = util.promisify(setTimeout);
+import { decycle } from "json-cyclic";
 import {
     Client,
     GatewayIntentBits,
@@ -987,7 +983,7 @@ client.on("interactionCreate", async interaction => {
                         } else if (volumes > 100) {
                             volumes = 100;
                         };
-                        if (dynamic.voice[interaction.guildId].playing) dynamic.voice[interaction.guildId].resource.volume.volume = volumes / 100;
+                        if (dynamic.voice[interaction.guildId].playing == voiceid) dynamic.voice[interaction.guildId].resource.volume.volume = volumes / 100;
                         dynamic.voice[interaction.guildId][voiceid].volumes = volumes;
                         interaction.reply(await voicestatus(0, 0, 1, 0, 0, "音量を変更しました！", interaction.guildId, voiceid));
                         break;
@@ -1078,13 +1074,32 @@ client.on("interactionCreate", async interaction => {
             case "console":
                 if (interaction.user.id != "835789352910716968") return interaction.reply({ content: "このコマンドはかずなみさんにしか実行できません...( ˊ•̥  ̯ •̥`)", ephemeral: true });
                 const datanames = interaction.options.getString("select");
+                await interaction.deferReply();
+                let json = {};
                 if (datanames == "dynamic") {
-                    output(outState.Raw, dynamic);
+                    json = dynamic;
+                    if (Object.keys(json.voice)[0]) {
+                        for (let i = 0; Object.keys(json.voice).length != i; i++) {
+                            json.voice[Object.keys(json.voice)[i]].connection = {};
+                            json.voice[Object.keys(json.voice)[i]].stream = {};
+                            json.voice[Object.keys(json.voice)[i]].resource = {};
+                        };
+                    };
                 } else {
-                    output(outState.Raw, dynamic[datanames]);
+                    json = dynamic[datanames];
+                    if (datanames == "voice") {
+                        if (Object.keys(json)[0]) {
+                            for (let i = 0; Object.keys(json).length != i; i++) {
+                                json[Object.keys(json)[i]].connection = {};
+                                json[Object.keys(json)[i]].stream = {};
+                                json[Object.keys(json)[i]].resource = {};
+                            };
+                        };
+                    };
                 };
 
-                interaction.reply(datanames + "のデータを出力しました！コンソールで確認してください！")
+                fs.writeFile("dataOutput.json", JSON.stringify(decycle(json), null, "\t"), e => { if (e) throw e; });
+                interaction.editReply(datanames + "のデータを出力しました！出力ファイルを確認しましょう！")
                 break;
         };
     } catch (e) { output(outState.Error, e); };
