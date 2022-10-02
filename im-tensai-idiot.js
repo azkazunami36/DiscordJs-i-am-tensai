@@ -883,10 +883,10 @@ client.on("interactionCreate", async interaction => {
             case "voice":
                 if (!dynamic.voice[interaction.guildId]) {
                     dynamic.voice[interaction.guildId] = {
-                        connection: "",
-                        stream: "",
-                        resource: "",
-                        playing: ""
+                        connection: {},
+                        stream: {},
+                        resource: {},
+                        playing: null
                     };
                 };
                 const uservoice = String(interaction.member.voice.channel).replace("<#", "").replace(">", "");
@@ -1077,7 +1077,7 @@ client.on("interactionCreate", async interaction => {
                 await interaction.deferReply();
                 let json = {};
                 if (datanames == "dynamic") {
-                    json = dynamic;
+                    json = JSON.parse(JSON.stringify(decycle(dynamic)));
                     if (Object.keys(json.voice)[0]) {
                         for (let i = 0; Object.keys(json.voice).length != i; i++) {
                             json.voice[Object.keys(json.voice)[i]].connection = {};
@@ -1086,7 +1086,7 @@ client.on("interactionCreate", async interaction => {
                         };
                     };
                 } else {
-                    json = dynamic[datanames];
+                    json = JSON.parse(JSON.stringify(decycle(dynamic[datanames])));
                     if (datanames == "voice") {
                         if (Object.keys(json)[0]) {
                             for (let i = 0; Object.keys(json).length != i; i++) {
@@ -1122,7 +1122,13 @@ const ytplay = async (guildId, voiceid) => {
         };
         dynamic.voice[guildId].playing = voiceid;
         let player = createAudioPlayer(); //多分音声を再生するためのもの
-        dynamic.voice[guildId].connection.subscribe(player); //connectionにplayerを登録？
+        try{
+            dynamic.voice[guildId].connection.subscribe(player); //connectionにplayerを登録？
+        } catch (e) {
+            dynamic.voice[guildId].connection.destroy();
+            dynamic.voice[guildId].playing = null;
+            output(outState.Error, e);
+        }
         dynamic.voice[guildId].stream = ytdl(dynamic.voice[guildId][voiceid].playing.url, { //ytdlで音声をダウンロードする
             filter: format => format.audioCodec === 'opus' && format.container === 'webm', //多分これで音声だけ抽出してる
             quality: "highest", //品質
