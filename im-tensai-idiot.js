@@ -309,18 +309,18 @@ const calcstring = (num, type) => {
 };
 //ここまで
 output(outState.Startup);
-import net from "net"; const bclient = new net.Socket();
-import dotenv from "dotenv"; dotenv.config();
-import fs from "fs";
-import events from "events";
-import proc from "child_process";
-import path from "path";
-import log4js from "log4js";
-import readline from "readline";
-import ytdl from "ytdl-core";
-import util from "node:util"; const wait = util.promisify(setTimeout);
-import { decycle } from "json-cyclic";
-import {
+const net = require("net"); const bclient = new net.Socket();
+const dotenv = require("dotenv").config();
+const fs = require("fs");
+const events = require("events");
+const proc = require("child_process");
+const path = require("path");
+const log4js = require("log4js");
+const readline = require("readline");
+const ytdl = require( "ytdl-core");
+const util = require("node:util"); const wait = util.promisify(setTimeout);
+const { decycle } = require("json-cyclic");
+const {
     Client,
     GatewayIntentBits,
     Partials,
@@ -330,8 +330,8 @@ import {
     ApplicationCommandOptionType,
     ChannelType,
     SlashCommandBuilder
-} from "discord.js";
-import {
+} = require("discord.js");
+const {
     entersState,
     createAudioPlayer,
     createAudioResource,
@@ -340,7 +340,7 @@ import {
     VoiceConnection,
     StreamType,
     AudioPlayerStatus
-} from "@discordjs/voice";
+} = require("@discordjs/voice");
 const client = new Client({
     partials: [Partials.Channel],
     intents: [
@@ -609,13 +609,13 @@ client.on("messageCreate", async message => {
                     };
                 } catch (e) {
                     output(outState.Error, e);
-                    message.reply("ごめんなさい...エラーが発生しちゃって、うまく動きませんでした...m_ _m\n治るまでそのやつはうまく行かないかもです...")
+                    message.reply("ごめんなさい...エラーが発生しちゃって、うまく動きませんでした...m_ _m\n治るまでそのやつはうまく行かないかもです...");
                 };
                 break;
             case ChannelType.DM:
                 try {
                     message.channel.sendTyping();
-                    await wait(500)
+                    await wait(500);
                     if (message.content.match(/wwwwwwwwwwwwwwww/)) {
                         await wait(3000);
                         message.reply("そんなおもろい？w");
@@ -859,7 +859,7 @@ client.on("messageCreate", async message => {
                     await wait(1600);
                     message.channel.sendTyping();
                     await wait(4000);
-                    message.reply("ほんとごめん...なんでエラーになったのか分からないけど...時間があるときに治してみるねっ！")
+                    message.reply("ほんとごめん...なんでエラーになったのか分からないけど...時間があるときに治してみるねっ！");
                 };
         };
     } catch (e) { output(outState.Error, e); };
@@ -1099,7 +1099,7 @@ client.on("interactionCreate", async interaction => {
                 };
 
                 fs.writeFile("dataOutput.json", JSON.stringify(decycle(json), null, "\t"), e => { if (e) throw e; });
-                interaction.editReply(datanames + "のデータを出力しました！出力ファイルを確認しましょう！")
+                interaction.editReply(datanames + "のデータを出力しました！出力ファイルを確認しましょう！");
                 break;
         };
     } catch (e) { output(outState.Error, e); };
@@ -1128,7 +1128,7 @@ const ytplay = async (guildId, voiceid) => {
             dynamic.voice[guildId].connection.destroy();
             dynamic.voice[guildId].playing = null;
             output(outState.Error, e);
-        }
+        };
         dynamic.voice[guildId].stream = ytdl(dynamic.voice[guildId][voiceid].playing.url, { //ytdlで音声をダウンロードする
             filter: format => format.audioCodec === 'opus' && format.container === 'webm', //多分これで音声だけ抽出してる
             quality: "highest", //品質
@@ -1149,7 +1149,7 @@ const ytplay = async (guildId, voiceid) => {
             output(outState.Error, e);
         };
     } catch (e) { output(outState.Error, e); };
-}
+};
 
 output(outState.Connecting);
 client.login(token);
