@@ -201,51 +201,61 @@ const output = async (set, text1, text2, text3) => {
  * @param content - メッセージ内容を入力します。
  * @returns {*} - 出力
  */
-const voicestatus = async (p, l, v, r, t, content) => {
+const voicestatus = async (playdescription, playlist, volumedescription, repertstatus, thumbnaildescription, content) => {
     let vilist, viplay, embed, description;
     try {
-        vilist = "";
-        viplay = "```タイトル: " + dynamic.playmeta.title + "\n動画時間: " + (await timeString(dynamic.playmeta.time)) + "\nURL: https://youtu.be/" + dynamic.playmeta.url + "\n追加者: " + dynamic.playmeta.name + "```";
-        for (let i = 0; i != dynamic.vilist.length; i++) {
-            vilist += (i + 1) + "本目";
-            if (i == 0) vilist += "(次再生されます。)";
-            let seconds, minutes = 0, hour = 0;
-            seconds = dynamic.vilist[i].time;
-            for (minutes; seconds > 59; minutes++) seconds -= 60;
-            for (hour; minutes > 59; hour++) minutes -= 60;
-            vilist += "\n```タイトル: " + dynamic.vilist[i].title + "\n動画時間: " + (await timeString(dynamic.vilist[i].time)) + "\nURL: https://youtu.be/" + dynamic.vilist[i].url + "\n追加者: " + dynamic.vilist[i].username + "```";
-        };
-        if (!dynamic.vilist[0]) vilist = "リストの内容はありません。";
-        if (!dynamic.playing) viplay = "現在再生されていません。";
         embed = new EmbedBuilder().setTitle("状態");
         description = "主に";
-        if (p == 1) {
+        if (playdescription == 1) {
+            viplay =
+                "```タイトル: " + dynamic.playmeta.title +
+                "\n動画時間: " + (await timeString(dynamic.playmeta.time)) +
+                "\nURL: https://youtu.be/" + dynamic.playmeta.url +
+                "\n追加者: " + dynamic.playmeta.name + "```";
+            if (!dynamic.playing) viplay = "現在再生されていません。";
+
             embed.addFields({ name: "再生中の曲の詳細", value: viplay });
             if (description != "主に") description += "、";
             description += "再生中の曲";
         };
-        if (l == 1) {
+        if (playlist == 1) {
+            vilist = "";
+            for (let i = 0; i != dynamic.vilist.length; i++) {
+                vilist += (i + 1) + "本目";
+                if (i == 0) vilist += "(次再生されます。)";
+                vilist +=
+                    "\n```タイトル: " + dynamic.vilist[i].title +
+                    "\n動画時間: " + (await timeString(dynamic.vilist[i].time)) +
+                    "\nURL: https://youtu.be/" + dynamic.vilist[i].url +
+                    "\n追加者: " + dynamic.vilist[i].username + "```";
+            };
+            if (!dynamic.vilist[0]) vilist = "リストの内容はありません。";
+
             embed.addFields({ name: "再生リスト", value: vilist });
             if (description != "主に") description += "、";
             description += "再生リスト";
         };
-        if (v == 1) {
+        if (volumedescription == 1) {
             embed.addFields({ name: "音量", value: String(dynamic.volumes) + "%" });
             if (description != "主に") description += "、";
             description += "音量";
         };
-        if (r == 1) {
-            embed.addFields({ name: "リピート状態", value: String(dynamic.repeat) });
+        if (repertstatus == 1) {
+            let type = "";
+            if (dynamic.repeat == 0) type = "オフ";
+            if (dynamic.repeat == 1) type = "リピート";
+            if (dynamic.repeat == 2) type = "１曲リピート";
+            embed.addFields({ name: "リピート状態", value: type });
             if (description != "主に") description += "、";
             description += "リピート状態";
         }
-        if (t == 1 && dynamic.playing) {
+        if (thumbnaildescription == 1 && dynamic.playing) {
             embed.setThumbnail(dynamic.playmeta.thumbnails);
-        } else if (t == 1 && !dynamic.playing || t == 2) {
+        } else if (thumbnaildescription == 1 && !dynamic.playing || thumbnaildescription == 2) {
             if (dynamic.vilist[0]) embed.setThumbnail(dynamic.vilist[dynamic.vilist.length - 1].thumbnails);
         };
         description += "を表示します。";
-        if (p == 1 && l == 1 && v == 1 && r == 1) description = "全ての状態を表示します。";
+        if (playdescription == 1 && playlist == 1 && volumedescription == 1 && repertstatus == 1) description = "全ての状態を表示します。";
         embed.setDescription(description);
     } catch (e) { output(outState.Error, e); };
     return { content: content, embeds: [embed] };
@@ -368,6 +378,7 @@ const basedata = {
                 .addNumberOption(option => option
                     .setName("vol")
                     .setDescription("0～100の間で入力をしてくださいっ(^-^)/")
+                    .setRequired(true)
                 )
             )
             .addSubcommand(subcommand => subcommand
@@ -381,9 +392,15 @@ const basedata = {
             .addSubcommand(subcommand => subcommand
                 .setName("repeat")
                 .setDescription("再生リストの内容を維持して、曲のリピートをします！")
-                .addBooleanOption(option => option
-                    .setName("bool")
+                .addNumberOption(option => option
+                    .setName("type")
                     .setDescription("オンオフを切り替えましょうっ")
+                    .addChoices(
+                        { name: "オフ", value: 0 },
+                        { name: "リピート", value: 1 },
+                        { name: "１曲リピート", value: 2 }
+                    )
+                    .setRequired(true)
                 )
             )
             .addSubcommand(subcommand => subcommand
@@ -392,6 +409,7 @@ const basedata = {
                 .addNumberOption(option => option
                     .setName("number")
                     .setDescription("リストの番号を入力しましょっ！")
+                    .setRequired(true)
                 )
             )
         ,
@@ -424,6 +442,29 @@ const basedata = {
                 .setName("statustext")
                 .setDescription("ステータスに設定する文を入力します。")
             )
+        ,
+        new SlashCommandBuilder()
+            .setName("console")
+            .setDescription("botのコンソールにデータを出力します！")
+            .addStringOption(option => option
+                .setName("select")
+                .setDescription("この一覧から出力したいデータを選択します！")
+                .addChoices(
+                    { name: "connection", value: "connection" },
+                    { name: "stream", value: "stream" },
+                    { name: "resource", value: "resource" },
+                    { name: "vilist", value: "vilist" },
+                    { name: "playing", value: "playing" },
+                    { name: "repeat", value: "repeat" },
+                    { name: "playmeta", value: "playmeta" },
+                    { name: "volumes", value: "volumes" },
+                    { name: "reaction", value: "reaction" },
+                    { name: "reply", value: "reply" },
+                    { name: "activities", value: "activities" },
+                    { name: "全て", value: "dynamic" }
+                )
+                .setRequired(true)
+            )
     ]
 };
 /**
@@ -453,7 +494,7 @@ let dynamic = {
     /**
      * リピートかどうかを切り替える機能
      */
-    repeat: false,
+    repeat: 0,
     /**
      * 再生中の動画のデータを格納
      */
@@ -807,17 +848,17 @@ client.on("messageCreate", async message => {
                         message.reply("あーっ！");
                         await wait(200);
                         message.channel.sendTyping();
-                        await wait(3000);
+                        await wait(2000);
                         message.reply("ぼーげんだーめだ！");
                     } else if (message.content.match(/猫|ねこ|にゃ～ん|にゃぁ|にゃあ|にゃー|にゃお|にゃお～ん|にゃおーん|にゃおぉん|にゃーっ|にゃん|にゃにゃ|しゃー|にゃおん|ニャン|ニャー|ニャーン|ニャニャ|ニャオーン|ニャオォン/)) {
-                        await wait(3000);
+                        await wait(1500);
                         message.reply("にゃお～ん！");
                     } else {
                         message.reply("あっごめん...実は...");
                         await wait(200);
                         message.channel.sendTyping();
                         await wait(3000);
-                        message.reply("「" + "」の意味が僕にはわからなかった...後で勉強してくるから、その意味が分かったらしっかり答えるねっ");
+                        message.reply("「" + message.content + "」の意味が僕にはわからなかった...後で勉強してくるから、その意味が分かったらしっかり答えるねっ");
                     };
                 } catch (e) {
                     output(outState.Error, e);
@@ -912,7 +953,7 @@ client.on("interactionCreate", async interaction => {
                         interaction.reply((await voicestatus(1, 1, 1, 1, 1, "現在のすべての状態を表示しまーすっ")));
                         break;
                     case "repeat":
-                        const type = interaction.options.getBoolean("bool");
+                        const type = interaction.options.getNumber("type");
                         output(outState.GetSubCommand, "repeat", type);
                         dynamic.repeat = type;
                         interaction.reply(await voicestatus(0, 0, 0, 1, 0, "リピート状態を変更しましたっ！"));
@@ -921,8 +962,8 @@ client.on("interactionCreate", async interaction => {
                         const number = interaction.options.getNumber("number");
                         output(outState.GetSubCommand, "remove", number);
                         if (!dynamic.vilist[0]) return interaction.reply("プレイリストが空です...`add [URL]`でプレイリストに追加してください！");
-                        if (number > dynamic.vilist.length || number < 0) return interaction.reply("受け取った値がよろしくなかったようです...もう一度やり増しましょう...！");
-                        dynamic.vilist.splice((number - 1), 1);
+                        if (number > dynamic.vilist.length || number < 1) return interaction.reply("受け取った値がよろしくなかったようです...もう一度やり増しましょう...！");
+                        dynamic.vilist.splice((number - 1));
                         interaction.reply(await voicestatus(0, 1, 0, 0, 0, "削除しました～"));
                         break;
                 };
@@ -989,6 +1030,17 @@ client.on("interactionCreate", async interaction => {
                     ]
                 });
                 break;
+            case "console":
+                if (interaction.user.id != "835789352910716968") return interaction.reply({ content: "このコマンドはかずなみさんにしか実行できません...( ˊ•̥  ̯ •̥`)", ephemeral: true });
+                const datanames = interaction.options.getString("select");
+                if (datanames == "dynamic") {
+                    console.log(dynamic);
+                } else {
+                    console.log(dynamic[datanames]);
+                };
+
+                interaction.reply(datanames + "のデータを出力しました！コンソールで確認してください！")
+                break;
         };
     } catch (e) { output(outState.Error, e); };
 });
@@ -1011,8 +1063,8 @@ const ytplay = async () => {
             dynamic.playmeta.title = dynamic.vilist[0].title;
             dynamic.playmeta.time = dynamic.vilist[0].time;
             dynamic.playmeta.thumbnails = dynamic.vilist[0].thumbnails;
-            dynamic.vilist.shift();
-            if (dynamic.repeat) dynamic.vilist.push({ url: dynamic.playmeta.url, username: dynamic.playmeta.name, title: dynamic.playmeta.title, time: dynamic.playmeta.time, thumbnails: dynamic.playmeta.thumbnails });
+            if (dynamic.repeat == 2) dynamic.vilist.shift();
+            if (dynamic.repeat == 1) dynamic.vilist.push({ url: dynamic.playmeta.url, username: dynamic.playmeta.name, title: dynamic.playmeta.title, time: dynamic.playmeta.time, thumbnails: dynamic.playmeta.thumbnails });
         };
         dynamic.playing = true;
         let player = createAudioPlayer(); //多分音声を再生するためのもの
