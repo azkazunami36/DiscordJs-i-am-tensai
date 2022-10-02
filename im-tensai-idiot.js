@@ -1058,7 +1058,7 @@ client.on("interactionCreate", async interaction => {
                         } else if (volumes > 100) {
                             volumes = 100;
                         };
-                        if (dynamic.playing) dynamic.resource.volume.volume = volumes / 100;
+                        if (dynamic.voice[interaction.guildId].playing) dynamic.voice[interaction.guildId].resource.volume.volume = volumes / 100;
                         dynamic.volumes = volumes;
                         interaction.reply(await voicestatus(0, 0, 1, 0, 0, "音量を変更しました！"));
                         break;
