@@ -35,6 +35,10 @@ const outState = {
      */
     GetSubCommand: "getsubcommand",
     /**
+     * ありのままのデータをログに出力する際に使用します。
+     */
+    Raw: "raw",
+    /**
      * Discordに使用するトークンの存在が確認できなかった場合に使用します。
      */
     NotToken: "nottoken",
@@ -73,7 +77,7 @@ const output = async (set, text1, text2, text3) => {
         ('00' + new Date().getMinutes()).slice(-2) + '分' +
         ('00' + new Date().getSeconds()).slice(-2) + '秒' +
         white;
-    let color, type, out = "", space = "";
+    let color, type, out = "", space = "", raw = false;
     switch (set) {
         case "startup":
             type = "system";
@@ -166,6 +170,9 @@ const output = async (set, text1, text2, text3) => {
             color = red;
             out = "エラーです... => " + text1;
             break;
+        case "raw":
+            out = text1;
+            raw = true;
         default:
             type = "unknown";
             color = yellow;
@@ -175,7 +182,10 @@ const output = async (set, text1, text2, text3) => {
     for (let i = 0; i < (9 - type.length); i++) {
         space += " ";
     };
-    console.log(nowTime + ":" + color + type + space + white + ": " + out);
+    let consoleout = "";
+    if (!raw) consoleout = nowTime + ":" + color + type + space + white + ": " + out
+    if (raw) consoleout = out
+    console.log(consoleout);
 };
 /**
  * VoiceStatus用`embed`を作成する関数です。
@@ -212,7 +222,7 @@ const voicestatus = async (playdescription, playlist, volumedescription, reperts
                 "\n動画時間: " + (await timeString(dynamic.voice[guildid][channelid].playing.time)) +
                 "\nURL: https://youtu.be/" + dynamic.voice[guildid][channelid].playing.url +
                 "\n追加者: " + dynamic.voice[guildid][channelid].playing.username + "```";
-            if (!dynamic.voice[guildid].playing == channelid) viplay = "現在再生されていません。";
+            if (dynamic.voice[guildid].playing != channelid) viplay = "現在再生されていません。";
 
             embed.addFields({ name: "再生中の曲の詳細", value: viplay });
             if (description != "主に") description += "、";
@@ -251,7 +261,7 @@ const voicestatus = async (playdescription, playlist, volumedescription, reperts
         }
         if (thumbnaildescription == 1 && dynamic.voice[guildid].playing == channelid) {
             embed.setThumbnail(dynamic.voice[guildid][channelid].playing.thumbnails);
-        } else if (thumbnaildescription == 1 && !dynamic.voice[guildid].playing == channelid || thumbnaildescription == 2) {
+        } else if (thumbnaildescription == 1 && dynamic.voice[guildid].playing != channelid || thumbnaildescription == 2) {
             if (dynamic.voice[guildid][channelid].playlist[0]) embed.setThumbnail(dynamic.voice[guildid][channelid].playlist[dynamic.voice[guildid][channelid].playlist.length - 1].thumbnails);
         };
         description += "を表示します。";
@@ -888,8 +898,6 @@ client.on("interactionCreate", async interaction => {
                 let voiceid = "";
                 if (uservoice != "null") voiceid = uservoice;
                 if (voicechannel != "null") voiceid = voicechannel;
-                console.log(uservoice)
-                console.log(voicechannel)
                 if (!dynamic.voice[interaction.guildId][voicechannel] && voicechannel != "null") {
                     dynamic.voice[interaction.guildId][voicechannel] = {
                         repeat: 0,
@@ -1070,9 +1078,9 @@ client.on("interactionCreate", async interaction => {
                 if (interaction.user.id != "835789352910716968") return interaction.reply({ content: "このコマンドはかずなみさんにしか実行できません...( ˊ•̥  ̯ •̥`)", ephemeral: true });
                 const datanames = interaction.options.getString("select");
                 if (datanames == "dynamic") {
-                    console.log(dynamic);
+                    output(outState.Raw, dynamic);
                 } else {
-                    console.log(dynamic[datanames]);
+                    output(outState.Raw, dynamic[datanames]);
                 };
 
                 interaction.reply(datanames + "のデータを出力しました！コンソールで確認してください！")
@@ -1096,7 +1104,7 @@ const ytplay = async (guildId, voiceid) => {
             if (dynamic.voice[guildId][voiceid].repeat != 2) dynamic.voice[guildId][voiceid].playlist.shift();
             if (dynamic.voice[guildId][voiceid].repeat == 1) dynamic.voice[guildId][voiceid].playlist.push(dynamic.voice[guildId][voiceid].playing);
         };
-        dynamic.voice[guildId].playing = true;
+        dynamic.voice[guildId].playing = voiceid;
         let player = createAudioPlayer(); //多分音声を再生するためのもの
         dynamic.voice[guildId].connection.subscribe(player); //connectionにplayerを登録？
         dynamic.voice[guildId].stream = ytdl(dynamic.voice[guildId][voiceid].playing.url, { //ytdlで音声をダウンロードする
