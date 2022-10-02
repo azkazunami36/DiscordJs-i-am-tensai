@@ -950,7 +950,8 @@ client.on("interactionCreate", async interaction => {
                     case "play":
                         output(outState.GetSubCommand, "play");
                         if (!uservoice && !voicechannel) return interaction.reply(interaction.member.user.username + "さんがボイスチャットにいません...\n入ってからまたやってみてくださいね！");
-                        if (dynamic.voice[interaction.guildId].playing) return interaction.reply("既に再生をしています。再生していない場合、他のチャンネルで再生をしている可能性があります。");
+                        if (dynamic.voice[interaction.guildId].playing == voiceid) return interaction.reply("既にVC再生をしています。");
+                        if (dynamic.voice[interaction.guildId].playing) return interaction.reply("既に別のVCで再生をしています。");
                         if (!dynamic.voice[interaction.guildId][voiceid].playlist[0]) return interaction.reply("プレイリストが空です...`add [URL]`でプレイリストに追加してください！");
                         dynamic.voice[interaction.guildId].connection = joinVoiceChannel({ //うまく説明はできないけど、ボイスチャンネル参加
                             adapterCreator: interaction.guild.voiceAdapterCreator, //わからん
@@ -964,7 +965,7 @@ client.on("interactionCreate", async interaction => {
                     case "stop":
                         output(outState.GetSubCommand, "stop");
                         if (!uservoice && !voicechannel) return interaction.reply(interaction.member.user.username + "さんがボイスチャットにいません...\n入ってからまたやってみてくださいね！");
-                        if (!dynamic.voice[interaction.guildId].playing) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
+                        if (dynamic.voice[interaction.guildId].playing != voiceid) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
                         dynamic.voice[interaction.guildId].stream.destroy(); //ストリームの切断
                         dynamic.voice[interaction.guildId].connection.destroy(); //VCの切断
                         dynamic.voice[interaction.guildId].playing = null;
@@ -972,7 +973,7 @@ client.on("interactionCreate", async interaction => {
                         break;
                     case "skip":
                         output(outState.GetSubCommand, "skip");
-                        if (!dynamic.voice[interaction.guildId].playing) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
+                        if (dynamic.voice[interaction.guildId].playing != voiceid) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
                         dynamic.voice[interaction.guildId].stream.destroy(); //ストリームの切断
                         interaction.reply((await voicestatus(1, 1, 1, 1, 1, "次の曲を再生しますねぇ", interaction.guildId, voiceid)));
                         ytplay(interaction.guildId, voiceid);
@@ -1123,6 +1124,7 @@ const ytplay = async (guildId, voiceid) => {
         } catch (e) {
             dynamic.voice[guildId].stream.destroy();
             dynamic.voice[guildId].connection.destroy();
+            dynamic.voice[guildId].playing = null;
             output(outState.Error, e);
         };
     } catch (e) { output(outState.Error, e); };
