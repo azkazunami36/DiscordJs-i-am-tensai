@@ -201,18 +201,18 @@ const output = async (set, text1, text2, text3) => {
  * @param content - メッセージ内容を入力します。
  * @returns {*} - 出力
  */
-const voicestatus = async (playdescription, playlist, volumedescription, repertstatus, thumbnaildescription, content) => {
+const voicestatus = async (playdescription, playlist, volumedescription, repertstatus, thumbnaildescription, content, guildid, channelid) => {
     let vilist, viplay, embed, description;
     try {
         embed = new EmbedBuilder().setTitle("状態");
         description = "主に";
         if (playdescription == 1) {
             viplay =
-                "```タイトル: " + dynamic.playmeta.title +
-                "\n動画時間: " + (await timeString(dynamic.playmeta.time)) +
-                "\nURL: https://youtu.be/" + dynamic.playmeta.url +
-                "\n追加者: " + dynamic.playmeta.name + "```";
-            if (!dynamic.playing) viplay = "現在再生されていません。";
+                "```タイトル: " + dynamic.voice[guildid][channelid].playing.title +
+                "\n動画時間: " + (await timeString(dynamic.voice[guildid][channelid].playing.time)) +
+                "\nURL: https://youtu.be/" + dynamic.voice[guildid][channelid].playing.url +
+                "\n追加者: " + dynamic.voice[guildid][channelid].playing.username + "```";
+            if (!dynamic.voice[guildid].playing == channelid) viplay = "現在再生されていません。";
 
             embed.addFields({ name: "再生中の曲の詳細", value: viplay });
             if (description != "主に") description += "、";
@@ -220,39 +220,39 @@ const voicestatus = async (playdescription, playlist, volumedescription, reperts
         };
         if (playlist == 1) {
             vilist = "";
-            for (let i = 0; i != dynamic.vilist.length; i++) {
+            for (let i = 0; i != dynamic.voice[guildid][channelid].playlist.length; i++) {
                 vilist += (i + 1) + "本目";
                 if (i == 0) vilist += "(次再生されます。)";
                 vilist +=
-                    "\n```タイトル: " + dynamic.vilist[i].title +
-                    "\n動画時間: " + (await timeString(dynamic.vilist[i].time)) +
-                    "\nURL: https://youtu.be/" + dynamic.vilist[i].url +
-                    "\n追加者: " + dynamic.vilist[i].username + "```";
+                    "\n```タイトル: " + dynamic.voice[guildid][channelid].playlist[i].title +
+                    "\n動画時間: " + (await timeString(dynamic.voice[guildid][channelid].playlist[i].time)) +
+                    "\nURL: https://youtu.be/" + dynamic.voice[guildid][channelid].playlist[i].url +
+                    "\n追加者: " + dynamic.voice[guildid][channelid].playlist[i].username + "```";
             };
-            if (!dynamic.vilist[0]) vilist = "リストの内容はありません。";
+            if (!dynamic.voice[guildid][channelid].playlist[0]) vilist = "リストの内容はありません。";
 
             embed.addFields({ name: "再生リスト", value: vilist });
             if (description != "主に") description += "、";
             description += "再生リスト";
         };
         if (volumedescription == 1) {
-            embed.addFields({ name: "音量", value: String(dynamic.volumes) + "%" });
+            embed.addFields({ name: "音量", value: String(dynamic.voice[guildid][channelid].volumes) + "%" });
             if (description != "主に") description += "、";
             description += "音量";
         };
         if (repertstatus == 1) {
             let type = "";
-            if (dynamic.repeat == 0) type = "オフ";
-            if (dynamic.repeat == 1) type = "リピート";
-            if (dynamic.repeat == 2) type = "１曲リピート";
+            if (dynamic.voice[guildid][channelid].repeat == 0) type = "オフ";
+            if (dynamic.voice[guildid][channelid].repeat == 1) type = "リピート";
+            if (dynamic.voice[guildid][channelid].repeat == 2) type = "１曲リピート";
             embed.addFields({ name: "リピート状態", value: type });
             if (description != "主に") description += "、";
             description += "リピート状態";
         }
-        if (thumbnaildescription == 1 && dynamic.playing) {
-            embed.setThumbnail(dynamic.playmeta.thumbnails);
-        } else if (thumbnaildescription == 1 && !dynamic.playing || thumbnaildescription == 2) {
-            if (dynamic.vilist[0]) embed.setThumbnail(dynamic.vilist[dynamic.vilist.length - 1].thumbnails);
+        if (thumbnaildescription == 1 && dynamic.voice[guildid].playing == channelid) {
+            embed.setThumbnail(dynamic.voice[guildid][channelid].playing.thumbnails);
+        } else if (thumbnaildescription == 1 && !dynamic.voice[guildid].playing == channelid || thumbnaildescription == 2) {
+            if (dynamic.voice[guildid][channelid].playlist[0]) embed.setThumbnail(dynamic.voice[guildid][channelid].playlist[dynamic.voice[guildid][channelid].playlist.length - 1].thumbnails);
         };
         description += "を表示します。";
         if (playdescription == 1 && playlist == 1 && volumedescription == 1 && repertstatus == 1) description = "全ての状態を表示します。";
@@ -365,9 +365,8 @@ const basedata = {
                 )
                 .addChannelOption(option => option
                     .setName("voicechannel")
-                    .setDescription("追加するVCを指定します！")
+                    .setDescription("追加するVCを指定します！(しないでもokですっ！")
                     .addChannelTypes(ChannelType.GuildVoice)
-                    .setRequired(true)
                 )
             )
             .addSubcommand(subcommand => subcommand
@@ -491,14 +490,7 @@ const basedata = {
                 .setName("select")
                 .setDescription("この一覧から出力したいデータを選択します！")
                 .addChoices(
-                    { name: "connection", value: "connection" },
-                    { name: "stream", value: "stream" },
-                    { name: "resource", value: "resource" },
-                    { name: "vilist", value: "vilist" },
-                    { name: "playing", value: "playing" },
-                    { name: "repeat", value: "repeat" },
-                    { name: "playmeta", value: "playmeta" },
-                    { name: "volumes", value: "volumes" },
+                    { name: "voice", value: "voice" },
                     { name: "reaction", value: "reaction" },
                     { name: "reply", value: "reply" },
                     { name: "activities", value: "activities" },
@@ -516,59 +508,6 @@ let dynamic = {
      * 音楽再生用に使用する
      */
     voice: {},
-    /**
-     * 接続や切断を管理/ytplay用
-     */
-    connection: "",
-    /**
-     * ストリーム/ytplay用
-     */
-    stream: "",
-    /**
-     * プレイヤーの管理をするやつ？音量変更に使用
-     */
-    resource: "",
-    /**
-     * プレイリスト機能に使用する。URLを入れる/ytplay用
-     */
-    vilist: [],
-    /**
-     * 再生中かどうかを判断
-     */
-    playing: false,
-    /**
-     * リピートかどうかを切り替える機能
-     */
-    repeat: 0,
-    /**
-     * 再生中の動画のデータを格納
-     */
-    playmeta: {
-        /**
-         * 動画を追加した人の名前
-         */
-        name: "",
-        /**
-         * YouTubeのVideoID
-         */
-        url: "",
-        /**
-         * 動画のタイトル
-         */
-        title: "",
-        /**
-         * 動画の長さ
-         */
-        time: "",
-        /**
-         * 動画のサムネイルURL
-         */
-        thumbnails: ""
-    },
-    /**
-     * 音量を設定
-     */
-    volumes: 50,
     /**
      * リアクション反応設定
      */
@@ -604,6 +543,8 @@ client.on("ready", async () => {
     try {
         output(outState.Ready, client.user.tag);
         client.user.setPresence(dynamic.activities);
+        await client.guilds.cache.get(process.env.guildId).commands.set([]);
+        await wait(5000);
         client.application.commands.set(basedata.commandlist, process.env.guildId);
     } catch (e) { output(outState.Error, e); };
 });
@@ -942,12 +883,14 @@ client.on("interactionCreate", async interaction => {
                         playing: ""
                     };
                 };
-                const voicechannel = interaction.options.getChannel("voicechannel");
-                const uservoice = interaction.member.voice.channel;
+                const uservoice = String(interaction.member.voice.channel).replace("<#", "").replace(">", "");
+                const voicechannel = String(interaction.options.getChannel("voicechannel")).replace("<#", "").replace(">", "");
                 let voiceid = "";
-                if (voicechannel) voiceid = voicechannel;
-                if (uservoice) voiceid = uservoice;
-                if (!dynamic.voice[interaction.guildId][voicechannel]) {
+                if (uservoice != "null") voiceid = uservoice;
+                if (voicechannel != "null") voiceid = voicechannel;
+                console.log(uservoice)
+                console.log(voicechannel)
+                if (!dynamic.voice[interaction.guildId][voicechannel] && voicechannel != "null") {
                     dynamic.voice[interaction.guildId][voicechannel] = {
                         repeat: 0,
                         volumes: 50,
@@ -958,10 +901,11 @@ client.on("interactionCreate", async interaction => {
                             time: "",
                             thumbnails: ""
                         },
-                        playlist: []
+                        playlist: [],
+                        selected: true
                     };
                 };
-                if (!dynamic.voice[interaction.guildId][uservoice]) {
+                if (!dynamic.voice[interaction.guildId][uservoice] && uservoice != "null") {
                     dynamic.voice[interaction.guildId][uservoice] = {
                         repeat: 0,
                         volumes: 50,
@@ -972,13 +916,15 @@ client.on("interactionCreate", async interaction => {
                             time: "",
                             thumbnails: ""
                         },
-                        playlist: []
+                        playlist: [],
+                        selected: false
                     };
                 };
                 switch (interaction.options.getSubcommand()) {
                     case "add":
                         const url = interaction.options.getString("url");
                         output(outState.GetSubCommand, "url", url);
+                        if (!uservoice && !voicechannel) return interaction.reply(interaction.member.user.username + "さんがボイスチャットにいません...\n入ってからまたやってみてくださいね！");
                         if (!ytdl.validateURL(url)) return interaction.reply("`" + url + "`が理解できませんでした..."); //ytdlがURL解析してくれるらしい
                         const videoid = ytdl.getURLVideoID(url);
                         interaction.deferReply();
@@ -990,49 +936,22 @@ client.on("interactionCreate", async interaction => {
                             let th = info.player_response.videoDetails.thumbnail.thumbnails[0].url;
                             thumbnails = th.split("?")[0];
                         });
-                        dynamic.voice[interaction.guildId][voicechannel].playlist.push({ url: videoid, username: uname, title: titled, time: time, thumbnails: thumbnails });
-                        interaction.editReply(await voicestatus(0, 1, 0, 0, 2, "追加ができました！"));
+                        dynamic.voice[interaction.guildId][voiceid].playlist.push({ url: videoid, username: uname, title: titled, time: time, thumbnails: thumbnails });
+                        interaction.editReply(await voicestatus(0, 1, 0, 0, 2, "追加ができました！", interaction.guildId, voiceid));
                         break;
                     case "play":
                         output(outState.GetSubCommand, "play");
                         if (!uservoice && !voicechannel) return interaction.reply(interaction.member.user.username + "さんがボイスチャットにいません...\n入ってからまたやってみてくださいね！");
                         if (dynamic.voice[interaction.guildId].playing) return interaction.reply("既に再生をしています。再生していない場合、他のチャンネルで再生をしている可能性があります。");
-                        if (!dynamic.voice[interaction.guildId][voiceid]) return interaction.reply("プレイリストが空です...`add [URL]`でプレイリストに追加してください！");
+                        if (!dynamic.voice[interaction.guildId][voiceid].playlist[0]) return interaction.reply("プレイリストが空です...`add [URL]`でプレイリストに追加してください！");
                         dynamic.voice[interaction.guildId].connection = joinVoiceChannel({ //うまく説明はできないけど、ボイスチャンネル参加
                             adapterCreator: interaction.guild.voiceAdapterCreator, //わからん
                             channelId: uservoice, //VoiceChannelを設定
                             guildId: interaction.guildId, //サーバーIDを設定
                             selfDeaf: true //多分スピーカーミュート
                         });
-                        try {
-                            if (dynamic.voice[interaction.guildId][voiceid].playlist[0]) {
-                                dynamic.voice[interaction.guildId][voiceid].playing = dynamic.voice[interaction.guildId][voiceid].playlist[0];
-                                if (dynamic.voice[interaction.guildId][voiceid].repeat == 2) dynamic.voice[interaction.guildId][voiceid].playlist.shift();
-                                if (dynamic.voice[interaction.guildId][voiceid].repeat == 1) dynamic.voice[interaction.guildId][voiceid].playlist.push(dynamic.voice[interaction.guildId][voiceid].playing);
-                            };
-                            dynamic.voice[interaction.guildId].playing = true;
-                            let player = createAudioPlayer(); //多分音声を再生するためのもの
-                            dynamic.voice[interaction.guildId].connection.subscribe(player); //connectionにplayerを登録？
-                            dynamic.voice[interaction.guildId].stream = ytdl(dynamic.voice[interaction.guildId][voiceid].playing.url, { //ytdlで音声をダウンロードする
-                                filter: format => format.audioCodec === 'opus' && format.container === 'webm', //多分これで音声だけ抽出してる
-                                quality: "highest", //品質
-                                highWaterMark: 32 * 1024 * 1024, //メモリキャッシュする量
-                            });
-                            try {
-                                dynamic.voice[interaction.guildId].resource = createAudioResource(dynamic.voice[interaction.guildId].stream, { inputType: StreamType.WebmOpus, inlineVolume: true }); //多分streamのデータを形式とともに入れる？
-                                dynamic.voice[interaction.guildId].resource.volume.setVolume(dynamic.voice[interaction.guildId][voiceid].volumes / 100); //音量調節
-                    
-                                player.play(dynamic.voice[interaction.guildId].resource); //再生
-                                await entersState(player, AudioPlayerStatus.Playing); //再生が始まるまでawaitで待機
-                                await entersState(player, AudioPlayerStatus.Idle); //再生リソースがなくなる(再生が終わる)まで待機
-                                ytplay();
-                            } catch (e) {
-                                dynamic.voice[interaction.guildId].stream.destroy();
-                                dynamic.voice[interaction.guildId].connection.destroy();
-                                output(outState.Error, e);
-                            };
-                        } catch (e) { output(outState.Error, e); };
-                        interaction.reply(await voicestatus(1, 1, 1, 1, 1, "曲の再生を始めます！"));
+                        ytplay(interaction.guildId, voiceid);
+                        interaction.reply(await voicestatus(1, 1, 1, 1, 1, "曲の再生を始めます！", interaction.guildId, voiceid));
                         break;
                     case "stop":
                         output(outState.GetSubCommand, "stop");
@@ -1041,44 +960,47 @@ client.on("interactionCreate", async interaction => {
                         dynamic.voice[interaction.guildId].stream.destroy(); //ストリームの切断
                         dynamic.voice[interaction.guildId].connection.destroy(); //VCの切断
                         dynamic.voice[interaction.guildId].playing = null;
-                        interaction.reply(await voicestatus(0, 1, 0, 0, 0, "曲を止めました...(´・ω・｀)"));
+                        interaction.reply(await voicestatus(0, 1, 0, 0, 0, "曲を止めました...(´・ω・｀)", interaction.guildId, voiceid));
                         break;
                     case "skip":
                         output(outState.GetSubCommand, "skip");
                         if (!dynamic.voice[interaction.guildId].playing) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
                         dynamic.voice[interaction.guildId].stream.destroy(); //ストリームの切断
-                        interaction.reply((await voicestatus(1, 1, 1, 1, 1, "次の曲を再生しますねぇ")));
-                        ytplay();
+                        interaction.reply((await voicestatus(1, 1, 1, 1, 1, "次の曲を再生しますねぇ", interaction.guildId, voiceid)));
+                        ytplay(interaction.guildId, voiceid);
                         break;
                     case "volume":
                         let volumes = (interaction.options.getNumber("vol"));
                         output(outState.GetSubCommand, "volume", volumes);
+                        if (!uservoice && !voicechannel) return interaction.reply(interaction.member.user.username + "さんがボイスチャットにいません...\n入ってからまたやってみてくださいね！");
                         if (volumes < 0) {
                             volumes = 0;
                         } else if (volumes > 100) {
                             volumes = 100;
                         };
                         if (dynamic.voice[interaction.guildId].playing) dynamic.voice[interaction.guildId].resource.volume.volume = volumes / 100;
-                        dynamic.volumes = volumes;
-                        interaction.reply(await voicestatus(0, 0, 1, 0, 0, "音量を変更しました！"));
+                        dynamic.voice[interaction.guildId][voiceid].volumes = volumes;
+                        interaction.reply(await voicestatus(0, 0, 1, 0, 0, "音量を変更しました！", interaction.guildId, voiceid));
                         break;
                     case "status":
                         output(outState.GetSubCommand, "status");
-                        interaction.reply((await voicestatus(1, 1, 1, 1, 1, "現在のすべての状態を表示しまーすっ")));
+                        interaction.reply((await voicestatus(1, 1, 1, 1, 1, "現在のすべての状態を表示しまーすっ", interaction.guildId, voiceid)));
                         break;
                     case "repeat":
                         const type = interaction.options.getNumber("type");
+                        if (!uservoice && !voicechannel) return interaction.reply(interaction.member.user.username + "さんがボイスチャットにいません...\n入ってからまたやってみてくださいね！");
                         output(outState.GetSubCommand, "repeat", type);
-                        dynamic.repeat = type;
-                        interaction.reply(await voicestatus(0, 0, 0, 1, 0, "リピート状態を変更しましたっ！"));
+                        dynamic.voice[interaction.guildId][voiceid].repeat = type;
+                        interaction.reply(await voicestatus(0, 0, 0, 1, 0, "リピート状態を変更しましたっ！", interaction.guildId, voiceid));
                         break;
                     case "remove":
                         const number = interaction.options.getNumber("number");
+                        if (!uservoice && !voicechannel) return interaction.reply(interaction.member.user.username + "さんがボイスチャットにいません...\n入ってからまたやってみてくださいね！");
                         output(outState.GetSubCommand, "remove", number);
-                        if (!dynamic.vilist[0]) return interaction.reply("プレイリストが空です...`add [URL]`でプレイリストに追加してください！");
+                        if (!dynamic.voice[interaction.guildId][voiceid].playlist[0]) return interaction.reply("プレイリストが空です...`add [URL]`でプレイリストに追加してください！");
                         if (number > dynamic.vilist.length || number < 1) return interaction.reply("受け取った値がよろしくなかったようです...もう一度やり増しましょう...！");
-                        dynamic.vilist.splice((number - 1));
-                        interaction.reply(await voicestatus(0, 1, 0, 0, 0, "削除しました～"));
+                        dynamic.voice[interaction.guildId][voiceid].playlist.splice((number - 1));
+                        interaction.reply(await voicestatus(0, 1, 0, 0, 0, "削除しました～", interaction.guildId, voiceid));
                         break;
                 };
                 break;
@@ -1166,6 +1088,37 @@ client.on("messageReactionRemove", (MessageReaction, User) => {
     try {
     } catch (e) { output(outState.Error, e); };
 });
+
+const ytplay = async (guildId, voiceid) => {
+    try {
+        if (dynamic.voice[guildId][voiceid].playlist[0]) {
+            dynamic.voice[guildId][voiceid].playing = dynamic.voice[guildId][voiceid].playlist[0];
+            if (dynamic.voice[guildId][voiceid].repeat != 2) dynamic.voice[guildId][voiceid].playlist.shift();
+            if (dynamic.voice[guildId][voiceid].repeat == 1) dynamic.voice[guildId][voiceid].playlist.push(dynamic.voice[guildId][voiceid].playing);
+        };
+        dynamic.voice[guildId].playing = true;
+        let player = createAudioPlayer(); //多分音声を再生するためのもの
+        dynamic.voice[guildId].connection.subscribe(player); //connectionにplayerを登録？
+        dynamic.voice[guildId].stream = ytdl(dynamic.voice[guildId][voiceid].playing.url, { //ytdlで音声をダウンロードする
+            filter: format => format.audioCodec === 'opus' && format.container === 'webm', //多分これで音声だけ抽出してる
+            quality: "highest", //品質
+            highWaterMark: 32 * 1024 * 1024, //メモリキャッシュする量
+        });
+        try {
+            dynamic.voice[guildId].resource = createAudioResource(dynamic.voice[guildId].stream, { inputType: StreamType.WebmOpus, inlineVolume: true }); //多分streamのデータを形式とともに入れる？
+            dynamic.voice[guildId].resource.volume.setVolume(dynamic.voice[guildId][voiceid].volumes / 100); //音量調節
+
+            player.play(dynamic.voice[guildId].resource); //再生
+            await entersState(player, AudioPlayerStatus.Playing); //再生が始まるまでawaitで待機
+            await entersState(player, AudioPlayerStatus.Idle); //再生リソースがなくなる(再生が終わる)まで待機
+            ytplay(guildId, voiceid);
+        } catch (e) {
+            dynamic.voice[guildId].stream.destroy();
+            dynamic.voice[guildId].connection.destroy();
+            output(outState.Error, e);
+        };
+    } catch (e) { output(outState.Error, e); };
+}
 
 output(outState.Connecting);
 client.login(token);
