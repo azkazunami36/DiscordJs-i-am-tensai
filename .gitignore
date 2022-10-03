@@ -1,3 +1,5 @@
 node_modules/*
 .env
 dataOutput.json
+voicedata.json
+ytaudio/*
