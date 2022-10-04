@@ -35,12 +35,12 @@ const outState = {
      */
     GetSubCommand: "getsubcommand",
     /**
-     * ありのままのデータをログに出力する際に使用します。
+     * ありのままのデータをログに出力する際に使用します。  
+     * 現在は使用できません。
      */
     Raw: "raw",
     /**
      * Discordに使用するトークンの存在が確認できなかった場合に使用します。
-     * 現在は使用できません。
      */
     NotToken: "nottoken",
     /**
@@ -325,6 +325,39 @@ const calcstring = (num, type) => {
     } catch (e) { output(outState.Error, e); };
     return output;
 };
+/**
+ * 棒読みちゃん送信
+ */
+const bsend = async (text, guildid, userid) => {
+    if (bclient.connecting) return;
+    let speed, tone, volume, voice;
+    if (!text) text = "空のメッセージ";
+    bclient.connect("50001", "localhost");
+    let Command = new Buffer.allocUnsafe(2);
+    Command.writeInt16LE(1, 0);
+    bclient.write(Command);
+    let Speed = new Buffer.allocUnsafe(2);
+    Speed.writeInt16LE(speed, 0);
+    bclient.write(Speed);
+    let Tone = new Buffer.allocUnsafe(2);
+    Tone.writeInt16LE(tone, 0);
+    bclient.write(Tone);
+    let Volume = new Buffer.allocUnsafe(2);
+    Volume.writeInt16LE(volume, 0);
+    bclient.write(Volume);
+    let Voice = new Buffer.allocUnsafe(2);
+    Voice.writeInt16LE(voice, 0);
+    bclient.write(Voice);
+    let Code = new Buffer.allocUnsafe(1);
+    Code.writeInt8(0, 0);
+    bclient.write(Code);
+    let Message = new Buffer.from(text, "utf8");
+    let Length = new Buffer.allocUnsafe(4);
+    Length.writeInt32LE(Message.length, 0);
+    bclient.write(Length);
+    bclient.write(Message);
+    bclient.end();
+};
 //ここまで
 output(outState.Startup);
 const net = require("net"); const bclient = new net.Socket();
@@ -372,6 +405,7 @@ const client = new Client({
         GatewayIntentBits.MessageContent
     ]
 });
+bclient.on("error", async e => { if (e) output(outState.Error, e); });
 /**
  * - 変動しない値を扱います。
  */
@@ -528,6 +562,70 @@ const basedata = {
                 )
                 .setRequired(true)
             )
+        ,
+        new SlashCommandBuilder()
+            .setName("bouyomi")
+            .setDescription("棒読みちゃんに送信する際の設定をしますっ！")
+            .addSubcommand(subcommand => subcommand
+                .setName("response")
+                .setDescription("送信されたものに反応し読み上げるかどうかを設定できます！")
+                .addBooleanOption(option => option
+                    .setName("message")
+                    .setDescription("メッセージが送信＆削除＆編集された時")
+                )
+                .addBooleanOption(option => option
+                    .setName("reaction")
+                    .setDescription("メッセージにリアクションが追加＆削除された時")
+                )
+                .addBooleanOption(option => option
+                    .setName("voice")
+                    .setDescription("ボイスチャンネルに参加＆ミュートや退出等された時")
+                )
+                .addBooleanOption(option => option
+                    .setName("command")
+                    .setDescription("コマンドが送信されたとき")
+                )
+            )
+            .addSubcommand(subcommand => subcommand
+                .setName("addsetting")
+                .setDescription("送信されたものに反応し読み上げるかどうかを設定できます！")
+                .addUserOption(option => option
+                    .setName("user")
+                    .setDescription("設定するユーザーを選択します！(未選択でサーバーに設定されます。")
+                )
+                .addNumberOption(option => option
+                    .setName("speed")
+                    .setDescription("速度を設定しますっ！")
+                )
+                .addNumberOption(option => option
+                    .setName("volume")
+                    .setDescription("音量を設定しますっ！")
+                )
+                .addNumberOption(option => option
+                    .setName("tone")
+                    .setDescription("声の高さを設定しますっ！")
+                )
+                .addNumberOption(option => option
+                    .setName("voice")
+                    .setDescription("声の種類を設定しますっ！")
+                )
+            )
+            .addSubcommand(subcommand => subcommand
+                .setName("general")
+                .setDescription("全体に適応される設定を変更しますっ！")
+                .addNumberOption(option => option
+                    .setName("volume")
+                    .setDescription("音量を設定しますっ！")
+                )
+            )
+            .addSubcommand(subcommand => subcommand
+                .setName("export")
+                .setDescription("棒読みちゃん用の設定を書き出します！")
+            )
+            .addSubcommand(subcommand => subcommand
+                .setName("import")
+                .setDescription("棒読みちゃん用の設定を取り込みます！")
+            )
     ]
 };
 /**
@@ -563,6 +661,16 @@ let dynamic = {
          * オンラインステータス
          */
         status: "online"
+    },
+    bouyomi: {
+        settings: {
+            message: true,
+            reaction: true,
+            voice: true,
+            command: true
+        },
+        server: {},
+        user: {}
     }
 };
 output(outState.NaN, "あなたのNode.jsのバージョンは" + process.version + "です。");
@@ -962,7 +1070,7 @@ client.on("interactionCreate", async interaction => {
                             thumbnails: "https://i.ytimg.com/vi/" + videoid + "/hqdefault.jpg"
                         });
                         if (!fs.existsSync("ytaudio")) fs.mkdirSync("ytaudio"); //フォルダがなければ作成
-                        if (!fs.existsSync("ytaudio/" + videoid + ".mp3")) ytdl(videoid, { filter: format => format.audioCodec === 'opus' && format.container === 'webm', quality: "highest" }).pipe(fs.createWriteStream("ytaudio/" + videoid + ".mp3")); //YouTubeの音声ファイルが無ければ取得(非同期
+                        if (!fs.existsSync("ytaudio/" + videoid + ".mp3")) ytdl(videoid, { filter: "audioonly", quality: "highest" }).pipe(fs.createWriteStream("ytaudio/" + videoid + ".mp3")); //YouTubeの音声ファイルが無ければ取得(非同期
                         interaction.editReply(await voicestatus(0, 1, 0, 0, 2, "追加ができました！", interaction.guildId, voiceid));
                         break;
                     case "play":
@@ -1130,6 +1238,142 @@ client.on("interactionCreate", async interaction => {
                 await interaction.deferReply();
                 fs.writeFile("dataOutput.json", JSON.stringify(decycle(dynamic[datanames]), null, "\t"), e => { if (e) throw e; });
                 interaction.editReply(datanames + "のデータを出力しました！出力ファイルを確認しましょう！");
+                break;
+            case "bouyomi":
+                switch (interaction.options.getSubcommand()) {
+                    case "response": {
+                        const message = interaction.options.getBoolean("message");
+                        const reaction = interaction.options.getBoolean("reaction");
+                        const voice = interaction.options.getBoolean("voice");
+                        const command = interaction.options.getBoolean("command");
+                        if (message != null) {
+                            dynamic.bouyomi.settings.message = message;
+                            change += "\nメッセージ応答: " + dynamic.bouyomi.settings.message;
+                        };
+                        if (reaction != null) {
+                            dynamic.bouyomi.settings.reaction = reaction;
+                            change += "\nリアクション応答: " + dynamic.bouyomi.settings.message;
+                        };
+                        if (voice != null) {
+                            dynamic.bouyomi.settings.voice = voice;
+                            change += "\nボイスチャット応答: " + dynamic.bouyomi.settings.message;
+                        };
+                        if (command != null) {
+                            dynamic.bouyomi.settings.command = command;
+                            change += "\nスラッシュコマンド応答: " + dynamic.bouyomi.settings.message;
+                        };
+                        let change = "```" +
+                            "\nメッセージ応答: " + dynamic.bouyomi.settings.message +
+                            "\nリアクション応答: " + dynamic.bouyomi.settings.reaction +
+                            "\nボイスチャット応答: " + dynamic.bouyomi.settings.voice +
+                            "\nスラッシュコマンド応答: " + dynamic.bouyomi.settings.command +
+                            "```"
+                        interaction.reply({
+                            content: "棒読みちゃんの応答設定を反映しました！",
+                            embeds: [new EmbedBuilder()
+                                .setTitle("内容")
+                                .setDescription("状態を表示します。")
+                                .addFields({ name: "情報", value: change })
+                            ]
+                        });
+                        break;
+                    }
+                    case "addsetting": {
+                        const user = interaction.options.getUser("user");
+                        const speed = interaction.options.getNumber("speed");
+                        const volume = interaction.options.getNumber("volume");
+                        const tone = interaction.options.getNumber("tone");
+                        const voice = interaction.options.getNumber("voice");
+                        let change = "";
+                        let apply = {
+                            name: "",
+                            iconURL: ""
+                        };
+
+                        if (user) {
+                            if (!dynamic.bouyomi.user[user.id]) dynamic.bouyomi.user[user.id] = JSON.parse(JSON.stringify(dynamic.bouyomi.settings.default))
+                            const data = dynamic.bouyomi.user[user.id];
+                            if (speed) data.speed = speed;
+                            if (volume) data.volume = volume;
+                            if (tone) data.tone = tone;
+                            if (voice) data.voice = voice;
+                            change = "```" +
+                                "\n声の速度: " + data.speed +
+                                "\n声の音量: " + data.volume +
+                                "\n声の高さ: " + data.tone +
+                                "\n声の種類: " + data.voice +
+                                "```"
+                            const adata = client.users.cache.get(user.id);
+                            apply = {
+                                name: adata.username,
+                                iconURL: adata.displayAvatarURL()
+                            };
+                        } else {
+                            if (!dynamic.bouyomi.server[interaction.guildId]) dynamic.bouyomi.server[interaction.guildId] = JSON.parse(JSON.stringify(dynamic.bouyomi.settings.default))
+                            const data = dynamic.bouyomi.server[interaction.guildId];
+                            if (speed) data.speed = speed;
+                            if (volume) data.volume = volume;
+                            if (tone) data.tone = tone;
+                            if (voice) data.voice = voice;
+                            change = "```" +
+                                "\n声の速度: " + data.speed +
+                                "\n声の音量: " + data.volume +
+                                "\n声の高さ: " + data.tone +
+                                "\n声の種類: " + data.voice +
+                                "```"
+                            const adata = client.guilds.cache.get(interaction.guildId);
+                            apply = {
+                                name: adata.name,
+                                iconURL: adata.iconURL()
+                            };
+                        };
+                        interaction.reply({
+                            content: "設定を反映しましたっ",
+                            embeds: [new EmbedBuilder()
+                                .setTitle("状態")
+                                .setDescription("現在の設定を表示します。")
+                                .addFields({ name: "情報", value: change })
+                                .setAuthor(apply)
+                            ]
+                        });
+                        break;
+                    }
+                    case "general": {
+                        const volume = interaction.options.getNumber("volume");
+                        let change = "```";
+                        if (volume != null) {
+                            dynamic.bouyomi.settings.general.volume = volume;
+                            change += "\n音量: " + dynamic.bouyomi.settings.general.volume;
+                        };
+                        change += "```";
+                        if (change == "``````") change = "変更内容はありません。";
+                        interaction.reply({
+                            content: "棒読みちゃんの全体設定の変更内容は以下です～",
+                            embeds: [new EmbedBuilder()
+                                .setTitle("変更内容")
+                                .setDescription("変更内容を表示します。")
+                                .addFields({ name: "情報", value: change })
+                            ]
+                        });
+                        break;
+                    }
+                    case "export": {
+                        await interaction.deferReply();
+
+                        fs.writeFile("bouyomidata.json", JSON.stringify(decycle(dynamic.bouyomi), null, "\t"), e => { if (e) throw e; });
+                        interaction.editReply("棒読みちゃんの設定データを書き出しました！");
+                        break;
+                    }
+                    case "import": {
+                        await interaction.deferReply();
+                        fs.readFile("bouyomidata.json", (error, data) => {
+                            if (error) throw error;
+                            dynamic.bouyomi = JSON.parse(data);
+                        });
+                        interaction.editReply("棒読みちゃんの設定データを取り込みました！");
+                        break;
+                    }
+                };
                 break;
         };
     } catch (e) { output(outState.Error, e); };
