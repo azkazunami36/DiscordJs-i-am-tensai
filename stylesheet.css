@@ -1,0 +1,143 @@
+:root {
+    --window-top-bar: 40px;
+    --top-height: 80px;
+    --discord-status-color-back: rgb(220, 220, 220);
+    --discord-dtatus-color-border: rgb(150, 150, 150);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    transition-duration: 0.5s;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #5f5f5f;
+}
+
+#top {
+    width: 100%;
+    height: var(--top-height);
+    background: rgb(232, 232, 232);
+    display: flex;
+    box-shadow: 0 5px 5px #00000045;
+    border-radius: 0 0 15px 15px;
+    z-index: 10;
+}
+
+.top-left,
+.top-right {
+    width: 50%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    height: 100%;
+}
+
+.top-left {
+    justify-content: flex-start;
+}
+
+.top-right {
+    justify-content: flex-end;
+}
+
+#main {
+    width: 100%;
+    top: var(--top-height);
+    bottom: 0;
+    padding: 10px 0;
+    overflow-y: scroll;
+    position: fixed;
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: space-between;
+    align-content: flex-start;
+    z-index: 1;
+}
+
+#discord-avatar-icon {
+    height: 90%;
+    aspect-ratio: 1/1;
+    margin: 8px;
+    object-fit: contain;
+    border-radius: 9999px;
+    border: 2px solid #00000052;
+}
+
+#discord-bot-name {
+    font-size: 32px;
+    color: black;
+    font-weight: 900;
+}
+
+#discord-connent-status {
+    width: 192px;
+    height: 32px;
+    margin: 12px;
+    font-size: 20px;
+    color: black;
+    font-weight: 600;
+    background: var(--discord-status-color-back);
+    border-radius: 8px;
+    border: 2px solid var(--discord-dtatus-color-border);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.tail-type1 {
+    width: 50%;
+    height: 128px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+}
+
+.tail-type2 {
+    width: calc(100% - 30px);
+    height: calc(100% - 20px);
+    background: rgb(246, 246, 246);
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 3px 5px 5px #0000002e;
+    position: relative;
+}
+
+.tail-title {
+    background: rgb(96, 178, 255);
+    width: 100%;
+    height: var(--window-top-bar);
+    font-size: 20px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tail-view {
+    width: 100%;
+    height: calc(100% - var(--window-top-bar));
+}
+
+#voice1-type {
+    height: 400px;
+}
+
+
+#bouyomi1-type {
+    height: 700px;
+}
+
+.links {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+}
