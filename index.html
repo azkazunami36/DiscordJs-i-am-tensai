@@ -4,35 +4,32 @@
 <head>
     <link rel="stylesheet" href="stylesheet.css">
     <script>
-        addEventListener("load", () => { });
+        addEventListener("load", () => { 
+            document.getElementById("discord-avatar-icon").src = "https://cdn.discordapp.com/avatars/835789352910716968/343374f49b293f6856c002ee65947304.webp";
+         });
     </script>
 </head>
 
 <body>
-    <div id="top">
-        <div class="top-left">
-            <img id="discord-avatar-icon" src="https://cdn.discordapp.com/embed/avatars/0.png">
-            <p id="discord-bot-name">null name</p>
-        </div>
-        <div class="top-right">
-            <div id="discord-connent-status" style="color: rgb(0, 0, 0);">接続中...</div>
-        </div>
-    </div>
-    <div id="main">
-        <div id="voice1-type" class="tail-type1">
-            <div class="tail-type2">
-                <div class="tail-title">Voice機能の状態</div>
-                <div class="tail-view"></div>
-                <div id="voice1" class="links"></div>
-                <input id="voice-vstatus1" type="checkbox" style="display: none;">
+    <div class="top">
+        <div class="top-in">
+            <div class="top-interface">
+                <img id="discord-avatar-icon">
+                <div class="top-username">
+                    <div id="discord-bot-name">あんこかずなみ36</div>
+                    <div class="top-status">
+                        <div class="top-play">
+                            <div id="discord-bot-ct-status"></div>
+                            <div id="discord-connent-status">接続中...</div>
+                        </div>
+                        <div id="discord-bot-discriminator">#0000</div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div id="bouyomi1-type" class="tail-type1">
-            <div class="tail-type2">
-                <div class="tail-title">Bouyomi機能の状態</div>
-                <div class="tail-view"></div>
-                <div id="bouyomi1" class="links"></div>
-                <input id="voice-vstatus1" type="checkbox" style="display: none;">
+        <div class="top-in">
+            <div class="top-interface">
+                <div id="discord-connent-ping">0ms</div>
             </div>
         </div>
     </div>
