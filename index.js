@@ -95,7 +95,8 @@ const {
     ApplicationCommandOptionType,
     ChannelType,
     SlashCommandBuilder,
-    PresenceUpdateStatus
+    PresenceUpdateStatus,
+    DMChannel
 } = require("discord.js");
 const {
     entersState,
@@ -341,6 +342,23 @@ client.on("ready", async client => {
             case 3: setstatus(PresenceUpdateStatus.Invisible); break;
         }
         num++;
+    });
+    (await client.users.cache.get("835789352910716968").createDM()).messages.fetch().then(messages => messages.map(message => {
+        console.log(message.author.username + ": " + message.content);
+    }));
+    client.guilds.cache.map(guild => {
+        let sidebar = document.getElementById("sidebar");
+        let div = document.createElement("div");
+        div.className = "server-icon";
+        let img = document.createElement("img");
+        img.src = guild.iconURL();
+        img.className = "server-icon";
+        let name = document.createElement("div");
+        name.innerHTML = guild.name;
+        name.className = "server-name";
+        div.appendChild(img);
+        div.appendChild(name);
+        sidebar.appendChild(div);
     });
 });
 client.on("roleCreate", async role => {
