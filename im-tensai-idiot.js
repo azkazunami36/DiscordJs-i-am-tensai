@@ -1157,7 +1157,7 @@ client.on("interactionCreate", async interaction => {
                         } else {
                             servers.channellist[voiceid].playlist.splice((number - 1), 1);
                             interaction.reply(await voicestatus(0, 1, 0, 0, 0, "削除しました～", interaction.guildId, voiceid));
-                        }
+                        };
                         break;
                     case "export":
                         let json = {
