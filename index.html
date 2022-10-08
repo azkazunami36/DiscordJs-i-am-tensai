@@ -6,6 +6,9 @@
     <script>
         addEventListener("load", () => {
             document.getElementById("discord-avatar-icon").src = "https://cdn.discordapp.com/avatars/835789352910716968/343374f49b293f6856c002ee65947304.webp";
+            addEventListener("mousemove", p => {
+                p.preventDefault();
+            });
         });
     </script>
 </head>
@@ -35,12 +38,13 @@
     </div>
     <div class="base">
         <div id="sidebar">
-            <div class="server-icon">
-                <img class="server-icon" src="https://cdn.discordapp.com/avatars/835789352910716968/343374f49b293f6856c002ee65947304.webp">
-                <div class="server-name">にゃー</div>
+        </div>
+        <div id="container">
+            <div id="container-list">
+            </div>
+            <div id="container-body">
             </div>
         </div>
-        <div class="container"></div>
     </div>
 </body>
 

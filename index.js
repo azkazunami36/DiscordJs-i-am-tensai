@@ -110,6 +110,7 @@ const {
 } = require("@discordjs/voice");
 const { channel } = require("diagnostics_channel");
 const { _ } = require("utils");
+const { IncomingMessage } = require("http");
 const client = new Client({
     partials: [
         Partials.Channel,
@@ -172,11 +173,6 @@ client.on("channelUpdate", async (oldChannel, newChannel) => {
 client.on("debug", async message => {
     console.log("debug");
     console.log(message);
-    if (message.match(/Heartbeat acknowledged, latency of/)) {
-        const ping0 = message.split(" of ");
-        const ping = ping0[1].slice(0, -1);
-        document.getElementById("discord-connent-ping").innerHTML = ping;
-    };
 });
 client.on("emojiCreate", async emoji => {
     console.log("emojiCreate");
@@ -347,18 +343,148 @@ client.on("ready", async client => {
         console.log(message.author.username + ": " + message.content);
     }));
     client.guilds.cache.map(guild => {
+        console.log(guild);
         let sidebar = document.getElementById("sidebar");
+        let label = document.createElement("label");
         let div = document.createElement("div");
-        div.className = "server-icon";
-        let img = document.createElement("img");
-        img.src = guild.iconURL();
-        img.className = "server-icon";
+        let icon = document.createElement("img");
         let name = document.createElement("div");
-        name.innerHTML = guild.name;
-        name.className = "server-name";
-        div.appendChild(img);
+        let input = document.createElement("input");
+        sidebar.appendChild(label)
+        label.appendChild(div);
+        label.appendChild(input);
+        div.appendChild(icon);
         div.appendChild(name);
-        sidebar.appendChild(div);
+
+        div.classList.add("server-icon");
+        icon.classList.add("server-icon");
+        icon.src = guild.iconURL();
+        name.classList.add("server-name");
+        name.innerHTML = guild.name;
+        input.type = "radio";
+        input.name = "server-check";
+        input.style.display = "none";
+
+        let container_list = document.getElementById("container-list");
+        let side = document.createElement("div");
+        container_list.appendChild(side);
+        side.classList.add("c-i");
+
+        let container_body = document.getElementById("container-body");
+        let body = document.createElement("div");
+        container_body.appendChild(body);
+        body.classList.add("c-b");
+
+        let guilddata = {};
+        guild.channels.cache.map(channel => {
+            if (channel.type == ChannelType.GuildCategory) return;
+            if (channel.parent) {
+                if (!guilddata[channel.parent.rawPosition]) guilddata[channel.parent.rawPosition] = {
+                    name: channel.parent.name,
+                    id: channel.parent.id,
+                    position: channel.parent.rawPosition,
+                    channel: {}
+                };
+                guilddata[channel.parent.rawPosition].channel[channel.rawPosition] = {
+                    name: channel.name,
+                    id: channel.id,
+                    type: channel.type,
+                    position: channel.rawPosition
+                };
+            } else {
+                console.log(channel);
+            };
+        });
+        console.log(guilddata);
+
+        for (let i = 0; i != Object.keys(guilddata).length; i++) {
+            let category = guilddata[Object.keys(guilddata)[i]];
+
+            let bar = document.createElement("div");
+            let category_name = document.createElement("div");
+            let category_list = document.createElement("div");
+            let list = document.createElement("div");
+            side.appendChild(bar);
+            bar.appendChild(category_name);
+            bar.appendChild(category_list);
+            category_list.appendChild(list);
+            bar.classList.add("ci-category");
+            category_name.innerHTML = category.name;
+            category_name.classList.add("ci-category-name");
+            category_list.classList.add("ci-category-list");
+            list.classList.add("ci-list");
+            for (let i2 = 0; i2 != Object.keys(category.channel).length; i2++) {
+                let channel = category.channel[Object.keys(category.channel)[i2]];
+
+                let main = document.createElement("div");
+                list.appendChild(main);
+                main.classList.add("ci-in");
+                main.innerHTML = channel.name;
+                if (channel.type == ChannelType.PublicThread || channel.type == ChannelType.PrivateThread) {
+                    main.classList.add("ci-thread");
+                } else {
+                    main.classList.add("ci-main");
+                };
+                let mainwindow = document.createElement("div");
+                body.appendChild(mainwindow);
+                mainwindow.classList.add("message-channel");
+                let messages = client.channels.cache.get(channel.id).messages;
+                if (messages) messages.fetch().then(messages => messages.map(message => {
+                    let channelbody = document.createElement("div");
+                    mainwindow.appendChild(channelbody);
+                    let icon = document.createElement("img");
+                    channelbody.appendChild(icon);
+                    let right = document.createElement("div");
+                    channelbody.appendChild(right);
+                    let info = document.createElement("div");
+                    right.appendChild(info);
+                    let name = document.createElement("div");
+                    info.appendChild(name);
+                    let time = document.createElement("div");
+                    info.appendChild(time);
+                    let content = document.createElement("div");
+                    right.appendChild(content);
+                    
+                    channelbody.classList.add("message");
+                    icon.classList.add("message-icon");
+                    right.classList.add("message-right");
+                    info.classList.add("message-info");
+                    name.classList.add("message-name");
+                    time.classList.add("message-time");
+                    content.classList.add("message-content");
+                    icon.src = message.author.avatarURL();
+                    name.innerHTML = message.author.username;
+                    time.innerHTML = message.createdTimestamp;
+                    content.innerHTML = message.content.replace(/\n/g, "<br>");
+                }));
+                main.addEventListener("click", e => {
+                    let window = document.getElementsByClassName("message-channel-selected" + guild.id)[0];
+                    if (window) window.classList.remove("message-channel-select");
+                    if (window) window.classList.remove("message-channel-selected" + guild.id);
+                    mainwindow.classList.add("message-channel-select");
+                    mainwindow.classList.add("message-channel-selected" + guild.id);
+                });
+                wait(10);
+            };
+        };
+
+        label.addEventListener("click", e => {
+            console.log(input.checked);
+            if (!input.checked) {
+                let server = document.getElementsByClassName("select-server")[0];
+                if (server) server.classList.remove("select-server");
+                icon.classList.add("select-server");
+                let select_list = document.getElementsByClassName("c-i-select")[0]
+                if (select_list) select_list.classList.remove("c-i-select");
+                side.classList.add("c-i-select");
+                let select_body = document.getElementsByClassName("c-b-select")[0]
+                if (select_body) select_body.classList.remove("c-b-select");
+                body.classList.add("c-b-select");
+            };
+        });
+        setInterval(() => {
+            document.getElementById("discord-connent-ping").innerHTML = client.ws.ping + "ms";
+        }, 1000);
     });
 });
 client.on("roleCreate", async role => {
@@ -475,6 +601,6 @@ client.on("webhookUpdate", async channel => {
     console.log("webhookUpdate");
     console.log(channel);
 });
-client.login(process.env.token2);
 addEventListener("load", () => {
+    client.login(process.env.token);
 });
