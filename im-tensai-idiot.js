@@ -1081,7 +1081,8 @@ client.on("interactionCreate", async interaction => {
                         await interaction.deferReply();
                         if (!dynamic.voice.youtubecache[videoid]) await ytdl.getInfo(url).then(info => dynamic.voice.youtubecache[videoid] = info.player_response.videoDetails);
                         servers.channellist[voiceid].playlist.push({
-                            url: videoid, username: interaction.member.user.username,
+                            url: videoid, 
+                            username: interaction.member.user.username,
                             title: dynamic.voice.youtubecache[videoid].title,
                             time: dynamic.voice.youtubecache[videoid].lengthSeconds,
                             thumbnails: "https://i.ytimg.com/vi/" + videoid + "/hqdefault.jpg"
@@ -1116,8 +1117,8 @@ client.on("interactionCreate", async interaction => {
                     case "skip":
                         output(outState.GetSubCommand, "skip");
                         if (servers.playing != voiceid) return interaction.reply("現在、音楽を再生していません。後で実行してください。");
-                        interaction.reply((await voicestatus(1, 1, 1, 1, 1, "次の曲を再生しますねぇ", interaction.guildId, voiceid)));
                         ytplay(interaction.guildId, voiceid);
+                        interaction.reply((await voicestatus(1, 1, 1, 1, 1, "次の曲を再生しますねぇ", interaction.guildId, voiceid)));
                         break;
                     case "volume":
                         let volumes = (interaction.options.getNumber("vol"));
