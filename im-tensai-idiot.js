@@ -1424,6 +1424,7 @@ const ytplay = async (guildId, voiceid) => {
                 servers.playing = null;
                 servers.connection.destroy();
                 output(outState.Error, e);
+                break;
             };
             try {
                 servers.resource = createAudioResource("ytaudio/" + servers.channellist[voiceid].playing.url + ".mp3", { inputType: StreamType.WebmOpus, inlineVolume: true }); //ytdlのストリームで取得できた音声ファイルを読み込む
@@ -1437,6 +1438,7 @@ const ytplay = async (guildId, voiceid) => {
                 servers.playing = null;
                 servers.connection.destroy();
                 output(outState.Error, e);
+                break;
             };
         }
     } catch (e) { output(outState.Error, e); };
