@@ -5,6 +5,7 @@
     "discord.js": "^14.5.0",
     "dotenv": "^16.0.3",
     "electron": "^21.0.1",
+    "ffmpeg-static": "^5.1.0",
     "json-cyclic": "^1.0.2",
     "libsodium-wrappers": "^0.7.10",
     "log4js": "^6.7.0",
