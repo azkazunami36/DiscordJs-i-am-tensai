@@ -1081,7 +1081,7 @@ client.on("interactionCreate", async interaction => {
                         await interaction.deferReply();
                         if (!dynamic.voice.youtubecache[videoid]) await ytdl.getInfo(url).then(info => dynamic.voice.youtubecache[videoid] = info.player_response.videoDetails);
                         servers.channellist[voiceid].playlist.push({
-                            url: videoid, 
+                            url: videoid,
                             username: interaction.member.user.username,
                             title: dynamic.voice.youtubecache[videoid].title,
                             time: dynamic.voice.youtubecache[videoid].lengthSeconds,
@@ -1159,7 +1159,7 @@ client.on("interactionCreate", async interaction => {
                             interaction.reply(await voicestatus(0, 1, 0, 0, 0, "削除しました～", interaction.guildId, voiceid));
                         };
                         break;
-                    case "export":
+                    case "export": {
                         let json = {
                             server: {},
                             youtubecache: {}
@@ -1175,17 +1175,36 @@ client.on("interactionCreate", async interaction => {
                         };
                         json.youtubecache = dynamic.voice.youtubecache;
 
-                        fs.writeFile("voicedata.json", JSON.stringify(decycle(json), null, "\t"), e => { if (e) throw e; });
+                        const req = require("http").request("http://localhost", {
+                            port: 3000,
+                            method: "post",
+                            headers: { "Content-Type": "text/plain;charset=utf-8" }
+                        });
+                        req.write(JSON.stringify(["voicedata_imtensai", decycle(json)]));
+                        req.on('error', err => console.log());
+                        req.end();
                         interaction.editReply("VCの設定データを出力しました！出力ファイルを確認しましょう！");
                         break;
-                    case "import":
+                    }
+                    case "import": {
                         await interaction.deferReply();
-                        fs.readFile("voicedata.json", (error, data) => {
-                            if (error) throw error;
-                            dynamic.voice = JSON.parse(data);
+                        const req = require("http").request("http://localhost", {
+                            port: 3000,
+                            method: "post",
+                            headers: { "Content-Type": "text/plain;charset=utf-8" }
                         });
+                        req.on('response', res => {
+                            let data = "";
+                            res.on("data", chunk => { data += chunk; });
+                            res.on("end", () => { dynamic.voice = JSON.parse(data).voicedata_imtensai; });
+                        });
+                        req.write(JSON.stringify([""]));
+                        req.on('error', err => console.log());
+                        req.end();
+
                         interaction.editReply("VCの設定データを取り込みました！");
                         break;
+                    }
                 };
                 break;
             case "change":
@@ -1378,16 +1397,33 @@ client.on("interactionCreate", async interaction => {
                     case "export": {
                         await interaction.deferReply();
 
-                        fs.writeFile("bouyomidata.json", JSON.stringify(decycle(dynamic.bouyomi), null, "\t"), e => { if (e) throw e; });
+                        const req = require("http").request("http://localhost", {
+                            port: 3000,
+                            method: "post",
+                            headers: { "Content-Type": "text/plain;charset=utf-8" }
+                        });
+                        req.write(JSON.stringify(["bouyomidata_imtensai", decycle(json)]));
+                        req.on('error', err => console.log());
+                        req.end();
                         interaction.editReply("棒読みちゃんの設定データを書き出しました！");
                         break;
                     }
                     case "import": {
                         await interaction.deferReply();
-                        fs.readFile("bouyomidata.json", (error, data) => {
-                            if (error) throw error;
-                            dynamic.bouyomi = JSON.parse(data);
+                        
+                        const req = require("http").request("http://localhost", {
+                            port: 3000,
+                            method: "post",
+                            headers: { "Content-Type": "text/plain;charset=utf-8" }
                         });
+                        req.on('response', res => {
+                            let data = "";
+                            res.on("data", chunk => { data += chunk; });
+                            res.on("end", () => { dynamic.bouyomi = JSON.parse(data).bouyomidata_imtensai; });
+                        });
+                        req.write(JSON.stringify([""]));
+                        req.on('error', err => console.log());
+                        req.end();
                         interaction.editReply("棒読みちゃんの設定データを取り込みました！");
                         break;
                     }

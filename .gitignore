@@ -1,6 +1,4 @@
 node_modules/*
 .env
 dataOutput.json
-voicedata.json
-bouyomidata.json
 ytaudio/*
